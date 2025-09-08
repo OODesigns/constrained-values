@@ -4,19 +4,22 @@ Validated Value Library
 A Python library for creating validated value objects with type checking, 
 range validation, and enum validation capabilities.
 """
-
 from .status import Status
 from .response import Response, T
 from .value import (
     Value,
     ValidationStrategy,
-    TypeValidationStrategy,
-    RangeValidationStrategy,
-    EnumValidationStrategy,
     ValidatedValue,
+)
+from .validated_types import (
     EnumValidatedValue,
     RangeValidatedValue,
-    StrictValidatedValue,
+    StrictValidatedValue
+)
+from .strategies import (
+    TypeValidationStrategy,
+    RangeValidationStrategy,
+    EnumValidationStrategy
 )
 
 __version__ = "0.1.0"
@@ -26,7 +29,6 @@ __email__ = "your.email@example.com"
 __all__ = [
     "Status",
     "Response",
-    "T",
     "Value",
     "ValidationStrategy",
     "TypeValidationStrategy",
@@ -37,3 +39,4 @@ __all__ = [
     "RangeValidatedValue",
     "StrictValidatedValue",
 ]
+
