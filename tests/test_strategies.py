@@ -1,9 +1,13 @@
 import unittest
 from typing import List
 
-from validated_value import Status, EnumValidatedValue, EnumValidationStrategy, TypeValidationStrategy, \
-    RangeValidatedValue, RangeValidationStrategy, Response, ValidatedValue, ValidationStrategy
-
+from validated_value.status import Status
+from validated_value.validated_types import EnumValidatedValue, RangeValidatedValue
+from validated_value.strategies import (
+    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy,
+)
+from validated_value.response import Response
+from validated_value.value import ValidatedValue, ValidationStrategy
 
 class TestValidatedValueStrategies(unittest.TestCase):
     def test_enum_validated_value_strategies(self):

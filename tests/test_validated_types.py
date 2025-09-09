@@ -74,5 +74,103 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
 
         self.assertEqual(rv.status, Status.EXCEPTION)
 
+class TestValidatedValueOrderingPreFix(unittest.TestCase):
+    def test_ordering_across_statuses_should_raise(self):
+        ok = RangeValidatedValue(5, int, 1, 10)
+        bad = RangeValidatedValue("5", int, 1, 10)
+        self.assertEqual(ok.status, Status.OK)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+        with self.assertRaises(ValueError):
+            _ = ok < bad
+        with self.assertRaises(ValueError):
+            _ = bad < ok
+        with self.assertRaises(ValueError):
+            _ = ok <= bad
+        with self.assertRaises(ValueError):
+            _ = bad <= ok
+
+    def test_ordering_across_validated_classes_should_raise(self):
+        r = RangeValidatedValue(5, int, 1, 10)
+        e = EnumValidatedValue(5, int, [3, 5, 7])
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(e.status, Status.OK)
+
+        # Desired: ordering across different ValidatedValue classes should raise
+        with self.assertRaises(TypeError):
+            _ = r < e
+        with self.assertRaises(TypeError):
+            _ = e < r
+        with self.assertRaises(TypeError):
+            _ = r <= e
+        with self.assertRaises(TypeError):
+            _ = e <= r
+
+class TestValidatedValueErrorsAndMessages(unittest.TestCase):
+    def test_ordering_value_error_message_exact(self):
+        ok = RangeValidatedValue(5, int, 1, 10)
+        bad = RangeValidatedValue("5", int, 1, 10)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+        with self.assertRaises(ValueError) as ctx:
+            _ = ok < bad
+        self.assertIn("Cannot order comparison on invalid values", str(ctx.exception))
+
+        with self.assertRaises(ValueError) as ctx2:
+            _ = bad <= ok
+        self.assertIn("Cannot order comparison on invalid values", str(ctx2.exception))
+
+class TestValidatedValueEqualitySemantics(unittest.TestCase):
+    def test_equality_false_when_either_invalid(self):
+        ok = RangeValidatedValue(5, int, 1, 10)
+        bad = RangeValidatedValue("5", int, 1, 10)
+        self.assertEqual(ok.status, Status.OK)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+        self.assertNotEqual(ok, bad)
+        self.assertNotEqual(bad, ok)
+
+    def test_cross_class_equality_is_false(self):
+        r = RangeValidatedValue(5, int, 1, 10)
+        e = EnumValidatedValue(5, int, [3, 5, 7])
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(e.status, Status.OK)
+
+        self.assertNotEqual(r, e)
+        self.assertNotEqual(e, r)
+
+class TestValidatedValueSortingBehaviour(unittest.TestCase):
+    def test_sorting_list_with_invalid_raises_value_error(self):
+        a = RangeValidatedValue(3, int, 1, 10)       # OK
+        b = RangeValidatedValue(7, int, 1, 10)       # OK
+        bad = RangeValidatedValue("x", int, 1, 10)   # EXCEPTION
+
+        items = [b, bad, a]
+        with self.assertRaises(ValueError):
+            items.sort()
+
+class TestValidatedValueRepr(unittest.TestCase):
+    def test_repr_range_valid_ok(self):
+        v = RangeValidatedValue(5, int, 1, 10)  # Status.OK
+        self.assertEqual(repr(v), "RangeValidatedValue(_value=5, status=OK)")
+
+    def test_repr_range_invalid_preserves_raw_value_and_status(self):
+        v = RangeValidatedValue("5", int, 1, 10)  # Status.EXCEPTION
+        # Note the quotes around  '5' because of !r
+        self.assertEqual(repr(v), "RangeValidatedValue(_value=None, status=EXCEPTION)")
+
+    def test_repr_enum_valid_ok(self):
+        e = EnumValidatedValue(5, int, [3, 5, 7])  # Status.OK
+        self.assertEqual(repr(e), "EnumValidatedValue(_value=5, status=OK)")
+
+    def test_repr_enum_invalid(self):
+        e = EnumValidatedValue(4, int, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
+        self.assertEqual(repr(e), "EnumValidatedValue(_value=None, status=EXCEPTION)")
+
+    def test_repr_handles_none_value_when_ok(self):
+        # Edge case: if you ever allow None as a valid value
+        e = EnumValidatedValue(None, type(None), [None])  # Status.OK
+        self.assertEqual(repr(e), "EnumValidatedValue(_value=None, status=OK)")
+
 if __name__ == '__main__':
     unittest.main()

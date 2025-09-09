@@ -1,5 +1,7 @@
-from validated_value import Response, Status, ValidationStrategy
-from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
+from .response import Response
+from .status import Status
+from .value import ValidationStrategy
+from .constants import DEFAULT_SUCCESS_MESSAGE
 
 class TypeValidationStrategy(ValidationStrategy):
     def __init__(self, valid_types):

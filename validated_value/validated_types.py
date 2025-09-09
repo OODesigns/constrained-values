@@ -1,11 +1,11 @@
 from abc import ABC
 from typing import List
 
-from validated_value import ValidatedValue, Status, ValidationStrategy
+from .value import ValidatedValue, ValidationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy
 from .response import T
-
+from .status import Status
 
 class EnumValidatedValue(ValidatedValue[T]):
     def get_strategies(self) -> List[ValidationStrategy]:

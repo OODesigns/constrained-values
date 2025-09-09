@@ -91,9 +91,46 @@ class TestExpectedBehaviourWhenComparing(unittest.TestCase):
         with self.assertRaises(TypeError):
             _ = v <= "x"
 
+    def test_value_le_between_different_value_types_typeerror(self):
+        """
+        Desired: comparing different Value subclasses should NOT silently return False.
+        Returning NotImplemented should let Python raise a TypeError for ordering ops.
+        """
+        v1 = Value(1)
+        v2 = Value("x")
+        with self.assertRaises(TypeError):
+            _ = v1 <= v2
+
     def test_value_eq_with_incomparable_python_type_is_false(self):
         v = Value(1)
         self.assertNotEqual(v,"x")
+
+    class TestValueRepr(unittest.TestCase):
+        def test_repr_int_value(self):
+            v = Value(42)
+            self.assertEqual(repr(v), "Value(42)")
+
+        def test_repr_str_value(self):
+            v = Value("hello")
+            # note quotes around 'hello' because of !r
+            self.assertEqual(repr(v), "Value('hello')")
+
+        def test_repr_none_value(self):
+            v = Value(None)
+            self.assertEqual(repr(v), "Value(None)")
+
+        def test_repr_list_value(self):
+            v = Value([1, 2, 3])
+            # lists use their own repr
+            self.assertEqual(repr(v), "Value([1, 2, 3])")
+
+        def test_repr_subclass_includes_subclass_name(self):
+            class MyValue(Value[int]):
+                pass
+            v = MyValue(99)
+            # __class__.__name__ should pick up subclass
+            self.assertEqual(repr(v), "MyValue(99)")
+
 
     if __name__ == '__main__':
         unittest.main()

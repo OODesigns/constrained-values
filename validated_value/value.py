@@ -5,6 +5,9 @@ from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, T
 from .status import Status
 
+INVALID_VALUES = "Cannot order comparison on invalid values"
+
+
 class Value(Generic[T]):
     """
     A base class to represent a generic value. Provides comparison methods for equality, less than,
@@ -15,13 +18,19 @@ class Value(Generic[T]):
     def __init__(self, value: T):
         self._value = value
 
+    def _class_is_same(self, other) -> bool:
+        return other.__class__ is self.__class__
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.value!r})"
+
     @property
     def value(self) -> T:
         """Returns the stored value."""
         return self._value
 
     def _compare(self, other, comparison_func):
-        if other.__class__ is self.__class__:
+        if self._class_is_same(other):
             return comparison_func(self.value, other.value)
         return NotImplemented
 
@@ -45,13 +54,18 @@ class ValidationStrategy(ABC):
 
 class ValidatedValue(Value[T], ABC):
     """
-    A base class that represents a value which must be validated. ValidationStrategy are required to implement
-    the validate method to perform validation and return a ValidatedResult.
+    A Value that has been validated using a chain of ValidationStrategy objects.
 
-    Attributes:
-        _status: The status of the validation.
-        _details: Additional details regarding the validation status.
+    Each ValidatedValue wraps a raw `_value` and runs strategies in order.
+    The outcome of validation is represented as a `Response`, which contains:
+     - status: `Status.OK` if all strategies pass, else `Status.EXCEPTION`
+     - details: a human-readable message from the failing strategy
+     - value: the (possibly transformed) validated value, or None if invalid
     """
+    def __repr__(self):
+        return f"{self.__class__.__name__}(_value={self._value!r}, status={self.status.name})"
+
+    __slots__ = ("_status", "_details")
 
     def __init__(self, value:T, success_details:str = DEFAULT_SUCCESS_MESSAGE):
         result = self._run_validations(value, success_details)
@@ -60,9 +74,8 @@ class ValidatedValue(Value[T], ABC):
         self._details = result.details
 
     def _run_validations(self, value, success_details:str):
-        """Run the list of validation strategies on the value, chaining responses.
-        :value:
-        :success_details: description the success details of the validation
+        """
+        Run the list of validation strategies on the value, chaining responses.
         """
         current_value = value  # Start with the initial value
 
@@ -99,15 +112,24 @@ class ValidatedValue(Value[T], ABC):
         return self.status == other.status
 
     def __eq__(self, other):
-        """Checks equality considering both validation status and value."""
-        return self._same_status(other) and super().__eq__(other)
+        if not self._class_is_same(other):
+            return False
+        if self.status != Status.OK or other.status != Status.OK:
+            return False
+        return super().__eq__(other)
+
+    def _is_comparing(self, other, func):
+        if not self._class_is_same(other):
+            return NotImplemented
+        if self.status != Status.OK or other.status != Status.OK:
+            raise ValueError(INVALID_VALUES)
+        return func(other)
 
     def __lt__(self, other):
-        """Checks if this value is less than another, considering validation status."""
-        return self._same_status(other) and super().__lt__(other)
+        return self._is_comparing(other, super().__lt__)
 
     def __le__(self, other):
-        """Checks if this value is less than or equal to another, considering validation status."""
-        return self._same_status(other) and super().__le__(other)
+        return self._is_comparing(other, super().__le__)
+
 
 
