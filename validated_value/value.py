@@ -47,6 +47,14 @@ class Value(Generic[T]):
         res = self._compare(other, lambda x, y: x <= y)
         return NotImplemented if res is NotImplemented else res
 
+    def __gt__(self, other):
+        res = self._compare(other, lambda x, y: x > y)
+        return NotImplemented if res is NotImplemented else res
+
+    def __ge__(self, other):
+        res = self._compare(other, lambda x, y: x >= y)
+        return NotImplemented if res is NotImplemented else res
+
 
 class ValidationStrategy(ABC):
     @abstractmethod
@@ -121,7 +129,8 @@ class ValidatedValue(Value[T], ABC):
             return False
         return super().__eq__(other)
 
-    def _is_comparing(self, other: "ValidatedValue[T]", func):
+    def _is_comparing(self, other: "ValidatedValue[T]",
+                      func: Callable[["Value[T]"], Union[bool, NotImplemented]]):
         """
         Internal helper for ordering comparisons:
         - Ensures same concrete class
@@ -140,5 +149,9 @@ class ValidatedValue(Value[T], ABC):
     def __le__(self, other):
         return self._is_comparing(other, super().__le__)
 
+    def __gt__(self, other):
+        return self._is_comparing(other, super().__gt__)
 
+    def __ge__(self, other):
+        return self._is_comparing(other, super().__ge__)
 

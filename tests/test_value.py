@@ -105,32 +105,57 @@ class TestExpectedBehaviourWhenComparing(unittest.TestCase):
         v = Value(1)
         self.assertNotEqual(v,"x")
 
-    class TestValueRepr(unittest.TestCase):
-        def test_repr_int_value(self):
-            v = Value(42)
-            self.assertEqual(repr(v), "Value(42)")
+class TestValueRepr(unittest.TestCase):
+    def test_repr_int_value(self):
+        v = Value(42)
+        self.assertEqual(repr(v), "Value(42)")
 
-        def test_repr_str_value(self):
-            v = Value("hello")
-            # note quotes around 'hello' because of !r
-            self.assertEqual(repr(v), "Value('hello')")
+    def test_repr_str_value(self):
+        v = Value("hello")
+        # note quotes around 'hello' because of !r
+        self.assertEqual(repr(v), "Value('hello')")
 
-        def test_repr_none_value(self):
-            v = Value(None)
-            self.assertEqual(repr(v), "Value(None)")
+    def test_repr_none_value(self):
+        v = Value(None)
+        self.assertEqual(repr(v), "Value(None)")
 
-        def test_repr_list_value(self):
-            v = Value([1, 2, 3])
-            # lists use their own repr
-            self.assertEqual(repr(v), "Value([1, 2, 3])")
+    def test_repr_list_value(self):
+        v = Value([1, 2, 3])
+        # lists use their own repr
+        self.assertEqual(repr(v), "Value([1, 2, 3])")
 
-        def test_repr_subclass_includes_subclass_name(self):
-            class MyValue(Value[int]):
-                pass
-            v = MyValue(99)
-            # __class__.__name__ should pick up subclass
-            self.assertEqual(repr(v), "MyValue(99)")
+    def test_repr_subclass_includes_subclass_name(self):
+        class MyValue(Value[int]):
+            pass
+        v = MyValue(99)
+        # __class__.__name__ should pick up subclass
+        self.assertEqual(repr(v), "MyValue(99)")
 
+class BreakLtSame(Value[int]):
+    def __init__(self, v):
+        super().__init__(v)
+    def __lt__(self, other):
+        # If Python fell back to reflected __lt__, we'd hit this and the test would fail.
+        raise RuntimeError("Reflected __lt__ should not be used")
+
+class BreakLeSame(Value[int]):
+    def __init__(self, v):
+        super().__init__(v)
+    def __le__(self, other):
+        raise RuntimeError("Reflected __le__ should not be used")
+
+class TestValueOrdering(unittest.TestCase):
+    def test_gt_direct_impl_same_class(self):
+        """Ensure __gt__ is used directly and not via reflected __lt__ when classes match."""
+        x = BreakLtSame(2)
+        y = BreakLtSame(1)
+        self.assertGreater(x , y)
+
+    def test_ge_direct_impl_same_class(self):
+        """Ensure __ge__ is used directly and not via reflected __le__ when classes match."""
+        x = BreakLeSame(2)
+        y = BreakLeSame(2)
+        self.assertGreaterEqual(x , y)
 
     if __name__ == '__main__':
         unittest.main()
