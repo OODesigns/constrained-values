@@ -3,7 +3,8 @@ from typing import List
 
 from .value import ValidatedValue, ValidationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
-from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy
+from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy, \
+    SameTypeValidationStrategy
 from .response import T
 from .status import Status
 
@@ -27,6 +28,7 @@ class RangeValidatedValue(ValidatedValue[T]):
     def __init__(self, value, valid_types, low_value, high_value, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         # Initialize the strategies for this subclass
         self._strategies = [
+            SameTypeValidationStrategy(low_value, high_value),
             TypeValidationStrategy(valid_types),
             RangeValidationStrategy(low_value, high_value)
         ]

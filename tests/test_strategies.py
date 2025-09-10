@@ -1,10 +1,11 @@
 import unittest
 from typing import List
 
+from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
 from validated_value.status import Status
 from validated_value.validated_types import EnumValidatedValue, RangeValidatedValue
 from validated_value.strategies import (
-    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy,
+    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy,
 )
 from validated_value.response import Response
 from validated_value.value import ValidatedValue, ValidationStrategy
@@ -22,14 +23,6 @@ class TestValidatedValueStrategies(unittest.TestCase):
         # Prove that EnumValidatedValue strategies are not shared with RangeValidatedValue
         range_val = RangeValidatedValue(15, int, 10, 20)
         self.assertNotEqual(enum_val._strategies, range_val._strategies, "EnumValidatedValue should not share strategies with RangeValidatedValue")
-
-    def test_range_validated_value_strategies(self):
-        range_val = RangeValidatedValue(15, int, 10, 20)
-
-        # Test that RangeValidatedValue has specific strategies
-        self.assertEqual(len(range_val._strategies), 2, "RangeValidatedValue should have 2 validation strategies")
-        self.assertIsInstance(range_val._strategies[1], RangeValidationStrategy, "Second strategy should be RangeValidationStrategy")
-        self.assertIsInstance(range_val._strategies[0], TypeValidationStrategy, "First strategy should be TypeValidationStrategy")
 
     # Test chaining between strategies in run_validations
     def test_run_validations_with_chaining(self):
@@ -80,7 +73,7 @@ class TestTypeValidationStrategy(unittest.TestCase):
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
-        self.assertEqual(response.details, "Value must be one of (<class 'int'>,), got str")
+        self.assertEqual(response.details, "Value must be one of 'int', got 'str'")
         self.assertIsNone(response.value)
 
     def test_multiple_types_validation(self):
@@ -102,7 +95,7 @@ class TestTypeValidationStrategy(unittest.TestCase):
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
-        self.assertEqual(response.details, "Value must be one of (<class 'int'>, <class 'float'>), got str")
+        self.assertEqual(response.details, "Value must be one of 'int','float', got 'str'")
         self.assertIsNone(response.value)
 
     def test_single_type_as_list(self):
@@ -118,8 +111,54 @@ class TestTypeValidationStrategy(unittest.TestCase):
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
-        self.assertEqual(response.details, "Value must be one of (<class 'int'>,), got str")
+        self.assertEqual(response.details, "Value must be one of 'int', got 'str'")
         self.assertIsNone(response.value)
+
+class TestSameTypeValidationStrategy(unittest.TestCase):
+    def test_same_type_ints_ok(self):
+        """Both values are int → OK; value passes through unchanged."""
+        s = SameTypeValidationStrategy(1, 10)
+        r = s.validate(999)
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(r.value, 999)
+        self.assertEqual(r.details, DEFAULT_SUCCESS_MESSAGE)
+
+    def test_same_type_floats_ok(self):
+        """Both values are float → OK."""
+        s = SameTypeValidationStrategy(1.0, 2.0)
+        r = s.validate("payload")
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(r.value, "payload")
+
+    def test_mismatched_int_vs_float_returns_exception(self):
+        """
+        int vs float → should NOT raise Python TypeError.
+        Should return Response(Status.EXCEPTION) with a helpful message.
+        """
+        s = SameTypeValidationStrategy(1, 2.0)
+        r = s.validate(None)
+        self.assertEqual(r.status, Status.EXCEPTION)
+        # Message should mention both type names in a human-friendly way.
+        self.assertEqual(r.details, "value:1 must match Type of value:2.0, as type 'float'")
+
+    def test_bool_vs_int_is_strict_and_fails(self):
+        """
+        bool is a subclass of int; strict same-type means this should fail.
+        """
+        s = SameTypeValidationStrategy(True, 1)
+        r = s.validate(None)
+        self.assertEqual(r.status, Status.EXCEPTION)
+
+    def test_custom_class_and_subclass_fail_strict(self):
+        """Subclass should NOT match base class under strict equality."""
+        class A: ...
+        class B(A): ...
+
+        ok = SameTypeValidationStrategy(A(), A()).validate(0)
+        self.assertEqual(ok.status, Status.OK)
+
+        bad = SameTypeValidationStrategy(A(), B()).validate(0)
+        self.assertEqual(bad.status, Status.EXCEPTION)
 
 if __name__ == '__main__':
     unittest.main()

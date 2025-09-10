@@ -56,7 +56,7 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
         try:
             rv = RangeValidatedValue("5", int, 1, 10)
         except TypeError:
-            self.fail("Value must be one of (<class 'int'>,), got str")
+            self.fail("Value must be one of 'int',got 'str'")
 
         self.assertEqual(rv.status, Status.EXCEPTION)
 
@@ -171,6 +171,12 @@ class TestValidatedValueRepr(unittest.TestCase):
         # Edge case: if you ever allow None as a valid value
         e = EnumValidatedValue(None, type(None), [None])  # Status.OK
         self.assertEqual(repr(e), "EnumValidatedValue(_value=None, status=OK)")
+
+class TestRangeTypes(unittest.TestCase):
+    def test_bounds_type_must_match_making_sure_first_test(self):
+        bad = RangeValidatedValue(5, int, 10, "100")
+        self.assertEqual(bad.status, Status.EXCEPTION)
+        self.assertEqual(bad.details, "value:10 must match Type of value:100, as type 'str'")
 
 if __name__ == '__main__':
     unittest.main()
