@@ -20,13 +20,13 @@ class TestEnumValidatedValue(unittest.TestCase):
 
 class TestRangeValidatedValue(unittest.TestCase):
     def test_range_validated_value(self):
-        range_val = RangeValidatedValue(15, int, 10, 20)
+        range_val = RangeValidatedValue(15, 10, 20)
 
         self.assertEqual(range_val.status, Status.OK, "Status should be OK after valid input")
         self.assertEqual(range_val.value, 15, "Value should be 15")
 
     def test_range_invalid_value(self):
-        range_val = RangeValidatedValue(25, int, 10, 20)
+        range_val = RangeValidatedValue(25, 10, 20)
 
         self.assertEqual(range_val.status, Status.EXCEPTION, "Status should be EXCEPTION after invalid input")
         self.assertIsNone(range_val.value, "Value should be None when validation fails")
@@ -41,7 +41,7 @@ class TestRangeValidatedValue(unittest.TestCase):
         self.assertEqual(enum_result.details, "validation successful", "EnumValidatedValue should pass all validations")
 
         # RangeValidatedValue should use RangeValidationStrategy and TypeValidationStrategy
-        range_val = RangeValidatedValue(15, int, 10, 20)
+        range_val = RangeValidatedValue(15, 10, 20)
         range_result = range_val._run_validations(15, "validation successful")
         self.assertEqual(range_result.status, Status.OK, "RangeValidatedValue should pass validation with correct range")
         self.assertEqual(range_result.details, "validation successful", "RangeValidatedValue should pass all validations")
@@ -54,7 +54,7 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
         - Should return a Response with Status.EXCEPTION and a clear type message.
         """
         try:
-            rv = RangeValidatedValue("5", int, 1, 10)
+            rv = RangeValidatedValue("5", 1, 10)
         except TypeError:
             self.fail("Value must be one of 'int',got 'str'")
 
@@ -62,22 +62,14 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
 
 
     def test_enum_validation_reports_type_before_membership(self):
-        """
-        Desired: for EnumValidatedValue, type is validated BEFORE membership.
-        - Wrong-type inputs should produce a type message,
-          NOT a membership/allowed-values message dump.
-        """
-        try:
-            rv = EnumValidatedValue(42, str, ["a", "b"])
-        except TypeError:
-            self.fail("Value must be one of (<class 'str'>,), got int")
-
+        rv = EnumValidatedValue(42, str, ["a", "b"])
         self.assertEqual(rv.status, Status.EXCEPTION)
+        self.assertEqual(rv.details, "Value must be one of 'str', got 'int'")
 
 class TestValidatedValueOrderingPreFix(unittest.TestCase):
     def test_ordering_across_statuses_should_raise(self):
-        ok = RangeValidatedValue(5, int, 1, 10)
-        bad = RangeValidatedValue("5", int, 1, 10)
+        ok = RangeValidatedValue(5, 1, 10)
+        bad = RangeValidatedValue("5", 1, 10)
         self.assertEqual(ok.status, Status.OK)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
@@ -91,7 +83,7 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
             _ = bad <= ok
 
     def test_ordering_across_validated_classes_should_raise(self):
-        r = RangeValidatedValue(5, int, 1, 10)
+        r = RangeValidatedValue(5, 1, 10)
         e = EnumValidatedValue(5, int, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
@@ -108,7 +100,7 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
 
 class TestValidatedValueErrorsAndMessages(unittest.TestCase):
     def test_ordering_value_error_message_exact(self):
-        ok = RangeValidatedValue(5, int, 1, 10)
+        ok = RangeValidatedValue(5, 1, 10)
         bad = RangeValidatedValue("5", int, 1, 10)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
@@ -122,8 +114,8 @@ class TestValidatedValueErrorsAndMessages(unittest.TestCase):
 
 class TestValidatedValueEqualitySemantics(unittest.TestCase):
     def test_equality_false_when_either_invalid(self):
-        ok = RangeValidatedValue(5, int, 1, 10)
-        bad = RangeValidatedValue("5", int, 1, 10)
+        ok = RangeValidatedValue(5, 1, 10)
+        bad = RangeValidatedValue("5", 1, 10)
         self.assertEqual(ok.status, Status.OK)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
@@ -131,7 +123,7 @@ class TestValidatedValueEqualitySemantics(unittest.TestCase):
         self.assertNotEqual(bad, ok)
 
     def test_cross_class_equality_is_false(self):
-        r = RangeValidatedValue(5, int, 1, 10)
+        r = RangeValidatedValue(5, 1, 10)
         e = EnumValidatedValue(5, int, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
@@ -141,9 +133,9 @@ class TestValidatedValueEqualitySemantics(unittest.TestCase):
 
 class TestValidatedValueSortingBehaviour(unittest.TestCase):
     def test_sorting_list_with_invalid_raises_value_error(self):
-        a = RangeValidatedValue(3, int, 1, 10)       # OK
-        b = RangeValidatedValue(7, int, 1, 10)       # OK
-        bad = RangeValidatedValue("x", int, 1, 10)   # EXCEPTION
+        a = RangeValidatedValue(3, 1, 10)       # OK
+        b = RangeValidatedValue(7, 1, 10)       # OK
+        bad = RangeValidatedValue("x", 1, 10)   # EXCEPTION
 
         items = [b, bad, a]
         with self.assertRaises(ValueError):
@@ -151,11 +143,11 @@ class TestValidatedValueSortingBehaviour(unittest.TestCase):
 
 class TestValidatedValueRepr(unittest.TestCase):
     def test_repr_range_valid_ok(self):
-        v = RangeValidatedValue(5, int, 1, 10)  # Status.OK
+        v = RangeValidatedValue(5, 1, 10)  # Status.OK
         self.assertEqual(repr(v), "RangeValidatedValue(_value=5, status=OK)")
 
     def test_repr_range_invalid_preserves_raw_value_and_status(self):
-        v = RangeValidatedValue("5", int, 1, 10)  # Status.EXCEPTION
+        v = RangeValidatedValue("5", 1, 10)  # Status.EXCEPTION
         # Note the quotes around  '5' because of !r
         self.assertEqual(repr(v), "RangeValidatedValue(_value=None, status=EXCEPTION)")
 
@@ -174,7 +166,7 @@ class TestValidatedValueRepr(unittest.TestCase):
 
 class TestRangeTypes(unittest.TestCase):
     def test_bounds_type_must_match_making_sure_first_test(self):
-        bad = RangeValidatedValue(5, int, 10, "100")
+        bad = RangeValidatedValue(5, 10, "100")
         self.assertEqual(bad.status, Status.EXCEPTION)
         self.assertEqual(bad.details, "value:10 must match Type of value:100, as type 'str'")
 

@@ -1,5 +1,7 @@
 from abc import ABC
-from typing import List
+from decimal import Decimal
+from fractions import Fraction
+from typing import List, Tuple, Type
 
 from .value import ValidatedValue, ValidationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
@@ -22,18 +24,31 @@ class EnumValidatedValue(ValidatedValue[T]):
 
 
 class RangeValidatedValue(ValidatedValue[T]):
+    @classmethod
+    def infer_valid_types_from_value(cls, value) -> Tuple[Type, ...]:
+        t = type(value)
+        if t is int:
+            return (int,)
+        if t is float:
+            return int, float
+        if t is Decimal:
+            return int, Decimal
+        if t is Fraction:
+            return int, Fraction
+        # default: exact type only
+        return (t,)
+
     def get_strategies(self) -> List[ValidationStrategy]:
         return self._strategies
 
-    def __init__(self, value, valid_types, low_value, high_value, success_details: str = DEFAULT_SUCCESS_MESSAGE):
+    def __init__(self, value, low_value, high_value, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         # Initialize the strategies for this subclass
         self._strategies = [
             SameTypeValidationStrategy(low_value, high_value),
-            TypeValidationStrategy(valid_types),
+            TypeValidationStrategy(RangeValidatedValue.infer_valid_types_from_value(low_value)),
             RangeValidationStrategy(low_value, high_value)
         ]
         super().__init__(value, success_details)
-
 
 """
    StrictValidatedValue Notes
