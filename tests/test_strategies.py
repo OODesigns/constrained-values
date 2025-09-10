@@ -21,7 +21,7 @@ class TestValidatedValueStrategies(unittest.TestCase):
         self.assertIsInstance(enum_val._strategies[0], TypeValidationStrategy, "First strategy should be TypeValidationStrategy")
 
         # Prove that EnumValidatedValue strategies are not shared with RangeValidatedValue
-        range_val = RangeValidatedValue(15, int, 10, 20)
+        range_val = RangeValidatedValue(15, 10, 20)
         self.assertNotEqual(enum_val._strategies, range_val._strategies, "EnumValidatedValue should not share strategies with RangeValidatedValue")
 
     # Test chaining between strategies in run_validations

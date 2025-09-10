@@ -101,16 +101,16 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
 class TestValidatedValueErrorsAndMessages(unittest.TestCase):
     def test_ordering_value_error_message_exact(self):
         ok = RangeValidatedValue(5, 1, 10)
-        bad = RangeValidatedValue("5", int, 1, 10)
+        bad = RangeValidatedValue("5", 1, 10)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
         with self.assertRaises(ValueError) as ctx:
             _ = ok < bad
-        self.assertIn("Cannot order comparison on invalid values", str(ctx.exception))
+        self.assertIn('RangeValidatedValue: cannot compare invalid values', str(ctx.exception))
 
         with self.assertRaises(ValueError) as ctx2:
             _ = bad <= ok
-        self.assertIn("Cannot order comparison on invalid values", str(ctx2.exception))
+        self.assertIn('RangeValidatedValue: cannot compare invalid values', str(ctx2.exception))
 
 class TestValidatedValueEqualitySemantics(unittest.TestCase):
     def test_equality_false_when_either_invalid(self):

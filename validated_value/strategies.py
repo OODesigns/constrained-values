@@ -5,11 +5,10 @@ from .status import Status
 from .value import ValidationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 
-def get_types(the_types) -> tuple[Any]:
-    # If the_types is a single type, convert it to a tuple
+def get_types(the_types) -> tuple[Any, ...]:
     if not isinstance(the_types, (list, tuple)):
         the_types = (the_types,)
-    return the_types
+    return tuple(the_types)
 
 class TypeValidationStrategy(ValidationStrategy):
     def __init__(self, valid_types):

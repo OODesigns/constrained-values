@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional
-
+from typing import Generic, List, Optional, Callable, Union
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, T
 from .status import Status
+"""
+Core value and validation abstractions.
 
-INVALID_VALUES = "Cannot order comparison on invalid values"
-
-
+- Value[T]: typed wrapper providing equality and ordering between *same-class* values.
+- ValidationStrategy: pluggable unit that returns a Response (OK/EXCEPTION) and may transform the value.
+- ValidatedValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
+"""
 class Value(Generic[T]):
     """
     A base class to represent a generic value. Provides comparison methods for equality, less than,
@@ -29,7 +31,7 @@ class Value(Generic[T]):
         """Returns the stored value."""
         return self._value
 
-    def _compare(self, other, comparison_func):
+    def _compare(self, other: "Value[T]", comparison_func: Callable[[T, T], bool]) -> Union[bool, NotImplemented]:
         if self._class_is_same(other):
             return comparison_func(self.value, other.value)
         return NotImplemented
@@ -73,13 +75,14 @@ class ValidatedValue(Value[T], ABC):
         self._status = result.status
         self._details = result.details
 
-    def _run_validations(self, value, success_details:str):
+    def _run_validations(self, value, success_details:str)-> Response[T]:
         """
-        Run the list of validation strategies on the value, chaining responses.
+        Run validation strategies in order. If any returns EXCEPTION, short-circuit
+        and propagate that Response. Otherwise, propagate the final (possibly transformed) value.
         """
         current_value = value  # Start with the initial value
 
-        for strategy in self.get_strategies():
+        for strategy in tuple(self.get_strategies()):
             response = strategy.validate(current_value)
             if response.status == Status.EXCEPTION:
                 return response  # Stop if any strategy fails
@@ -118,11 +121,17 @@ class ValidatedValue(Value[T], ABC):
             return False
         return super().__eq__(other)
 
-    def _is_comparing(self, other, func):
+    def _is_comparing(self, other: "ValidatedValue[T]", func):
+        """
+        Internal helper for ordering comparisons:
+        - Ensures same concrete class
+        - Ensures both operands are valid (Status.OK)
+        - Delegates to the base Value comparator
+        """
         if not self._class_is_same(other):
             return NotImplemented
         if self.status != Status.OK or other.status != Status.OK:
-            raise ValueError(INVALID_VALUES)
+            raise ValueError(f"{self.__class__.__name__}: cannot compare invalid values")
         return func(other)
 
     def __lt__(self, other):
