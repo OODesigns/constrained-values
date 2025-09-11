@@ -8,7 +8,8 @@ from validated_value.strategies import (
     EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy,
 )
 from validated_value.response import Response
-from validated_value.value import ValidatedValue, ValidationStrategy
+from validated_value.value import CanonicalValue, TransformationStrategy, PipeLineStrategy
+
 
 class TestValidatedValueStrategies(unittest.TestCase):
     def test_enum_validated_value_strategies(self):
@@ -27,21 +28,19 @@ class TestValidatedValueStrategies(unittest.TestCase):
     # Test chaining between strategies in run_validations
     def test_run_validations_with_chaining(self):
         # Custom strategies to simulate chaining
-        class IncrementStrategy:
+        class IncrementStrategy(TransformationStrategy):
             """ A simple strategy that increments the value by 1. """
-            @staticmethod
-            def validate(value):
+            def transform(self, value):
                 return Response(status=Status.OK, details="Incremented value", value=value + 1)
 
-        class DoubleStrategy:
+        class DoubleStrategy(TransformationStrategy):
             """ A simple strategy that doubles the value. """
-            @staticmethod
-            def validate(value):
+            def transform(self,value):
                 return Response(status=Status.OK, details="Doubled value", value=value * 2)
 
         # Creating a custom validated value with chained strategies
-        class ChainedValue(ValidatedValue):
-            def get_strategies(self) -> List[ValidationStrategy]:
+        class ChainedValue(CanonicalValue):
+            def get_strategies(self) -> List[PipeLineStrategy]:
                 return [
                     IncrementStrategy(),
                     DoubleStrategy(),
@@ -68,13 +67,11 @@ class TestTypeValidationStrategy(unittest.TestCase):
         response = strategy.validate(42)
         self.assertEqual(response.status, Status.OK)
         self.assertEqual(response.details, "validation successful")
-        self.assertEqual(response.value, 42)
 
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
         self.assertEqual(response.details, "Value must be one of 'int', got 'str'")
-        self.assertIsNone(response.value)
 
     def test_multiple_types_validation(self):
         # Test multiple types validation (int and float)
@@ -84,19 +81,16 @@ class TestTypeValidationStrategy(unittest.TestCase):
         response = strategy.validate(42)
         self.assertEqual(response.status, Status.OK)
         self.assertEqual(response.details, "validation successful")
-        self.assertEqual(response.value, 42)
 
         # Test valid float value
         response = strategy.validate(42.0)
         self.assertEqual(response.status, Status.OK)
         self.assertEqual(response.details, "validation successful")
-        self.assertEqual(response.value, 42.0)
 
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
         self.assertEqual(response.details, "Value must be one of 'int','float', got 'str'")
-        self.assertIsNone(response.value)
 
     def test_single_type_as_list(self):
         # Test that a single type in a list works the same as passing it directly
@@ -106,13 +100,11 @@ class TestTypeValidationStrategy(unittest.TestCase):
         response = strategy.validate(422)
         self.assertEqual(response.status, Status.OK)
         self.assertEqual(response.details, "validation successful")
-        self.assertEqual(response.value, 422)
 
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
         self.assertEqual(response.details, "Value must be one of 'int', got 'str'")
-        self.assertIsNone(response.value)
 
 class TestSameTypeValidationStrategy(unittest.TestCase):
     def test_same_type_ints_ok(self):
@@ -120,7 +112,6 @@ class TestSameTypeValidationStrategy(unittest.TestCase):
         s = SameTypeValidationStrategy(1, 10)
         r = s.validate(999)
         self.assertEqual(r.status, Status.OK)
-        self.assertEqual(r.value, 999)
         self.assertEqual(r.details, DEFAULT_SUCCESS_MESSAGE)
 
     def test_same_type_floats_ok(self):
@@ -128,7 +119,6 @@ class TestSameTypeValidationStrategy(unittest.TestCase):
         s = SameTypeValidationStrategy(1.0, 2.0)
         r = s.validate("payload")
         self.assertEqual(r.status, Status.OK)
-        self.assertEqual(r.value, "payload")
 
     def test_mismatched_int_vs_float_returns_exception(self):
         """

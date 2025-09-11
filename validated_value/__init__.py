@@ -9,7 +9,7 @@ from .response import Response, T
 from .value import (
     Value,
     ValidationStrategy,
-    ValidatedValue,
+    CanonicalValue,
 )
 from .validated_types import (
     EnumValidatedValue,
@@ -34,7 +34,7 @@ __all__ = [
     "TypeValidationStrategy",
     "RangeValidationStrategy",
     "EnumValidationStrategy",
-    "ValidatedValue",
+    "CanonicalValue",
     "EnumValidatedValue",
     "RangeValidatedValue",
     "StrictValidatedValue",
