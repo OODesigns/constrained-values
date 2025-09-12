@@ -7,9 +7,9 @@ from .status import Status
 Core value and validation abstractions.
 
 - Value[T]: typed wrapper providing equality and ordering between *same-class* values.
-- ValidationStrategy: pluggable unit that returns a Response (OK/EXCEPTION).
-- TransformationStrategy: pluggable unit that transform the value.
-- CanonicalValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
+- ValidationStrategy: pluggable unit that returns a StatusResponse (OK/EXCEPTION).
+- TransformationStrategy: pluggable unit that transform returns Response(OK/EXCEPTION and Value)
+- ConstrainedValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
 """
 class Value(Generic[T]):
     """
@@ -72,7 +72,7 @@ class TransformationStrategy(PipeLineStrategy):
         """Perform validation and return a Response."""
         pass
 
-class CanonicalValue(Value[T], ABC):
+class ConstrainedValue(Value[T], ABC):
     """
     A value processed by a pipeline of transformation and validation strategies.
 
@@ -149,7 +149,7 @@ class CanonicalValue(Value[T], ABC):
             return False
         return super().__eq__(other)
 
-    def _is_comparing(self, other: "CanonicalValue[T]",
+    def _is_comparing(self, other: "ConstrainedValue[T]",
                       func: Callable[["Value[T]"], Union[bool, NotImplemented]]):
         """
         Internal helper for ordering comparisons:

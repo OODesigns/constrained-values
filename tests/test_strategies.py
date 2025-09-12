@@ -3,18 +3,18 @@ from typing import List
 
 from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
 from validated_value.status import Status
-from validated_value.validated_types import EnumValidatedValue, RangeValidatedValue
+from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
 from validated_value.strategies import (
     EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy,
 )
 from validated_value.response import Response
-from validated_value.value import CanonicalValue, TransformationStrategy, PipeLineStrategy
+from validated_value.value import ConstrainedValue, TransformationStrategy, PipeLineStrategy
 
 
 class TestValidatedValueStrategies(unittest.TestCase):
     def test_enum_validated_value_strategies(self):
         valid_values = [Status.OK, Status.EXCEPTION]
-        enum_val = EnumValidatedValue(Status.OK, Status, valid_values)
+        enum_val = ConstrainedEnumValue(Status.OK, Status, valid_values)
 
         # Test that EnumValidatedValue has specific strategies
         self.assertEqual(len(enum_val._strategies), 2, "EnumValidatedValue should have 2 validation strategies")
@@ -22,7 +22,7 @@ class TestValidatedValueStrategies(unittest.TestCase):
         self.assertIsInstance(enum_val._strategies[0], TypeValidationStrategy, "First strategy should be TypeValidationStrategy")
 
         # Prove that EnumValidatedValue strategies are not shared with RangeValidatedValue
-        range_val = RangeValidatedValue(15, 10, 20)
+        range_val = ConstrainedRangeValue(15, 10, 20)
         self.assertNotEqual(enum_val._strategies, range_val._strategies, "EnumValidatedValue should not share strategies with RangeValidatedValue")
 
     # Test chaining between strategies in run_validations
@@ -39,7 +39,7 @@ class TestValidatedValueStrategies(unittest.TestCase):
                 return Response(status=Status.OK, details="Doubled value", value=value * 2)
 
         # Creating a custom validated value with chained strategies
-        class ChainedValue(CanonicalValue):
+        class ChainedValue(ConstrainedValue):
             def get_strategies(self) -> List[PipeLineStrategy]:
                 return [
                     IncrementStrategy(),

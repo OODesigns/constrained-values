@@ -1,11 +1,11 @@
 import unittest
 from validated_value.status import Status
-from validated_value.validated_types import EnumValidatedValue, RangeValidatedValue
+from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
 
 class TestEnumValidatedValue(unittest.TestCase):
     def test_enum_validated_value(self):
         valid_values = [Status.OK, Status.EXCEPTION]
-        enum_val = EnumValidatedValue(Status.OK, Status, valid_values)
+        enum_val = ConstrainedEnumValue(Status.OK, Status, valid_values)
 
         self.assertEqual(enum_val.status, Status.OK, "Status should be OK after validation")
         self.assertIsNotNone(enum_val.value, "Validated value should not be None")
@@ -13,20 +13,20 @@ class TestEnumValidatedValue(unittest.TestCase):
 
     def test_enum_invalid_value(self):
         valid_values = [Status.OK, Status.EXCEPTION]
-        invalid_val = EnumValidatedValue('Invalid', Status, valid_values)
+        invalid_val = ConstrainedEnumValue('Invalid', Status, valid_values)
 
         self.assertEqual(invalid_val.status, Status.EXCEPTION, "Status should be EXCEPTION after invalid input")
         self.assertIsNone(invalid_val.value, "Value should be None when validation fails")
 
 class TestRangeValidatedValue(unittest.TestCase):
     def test_range_validated_value(self):
-        range_val = RangeValidatedValue(15, 10, 20)
+        range_val = ConstrainedRangeValue(15, 10, 20)
 
         self.assertEqual(range_val.status, Status.OK, "Status should be OK after valid input")
         self.assertEqual(range_val.value, 15, "Value should be 15")
 
     def test_range_invalid_value(self):
-        range_val = RangeValidatedValue(25, 10, 20)
+        range_val = ConstrainedRangeValue(25, 10, 20)
 
         self.assertEqual(range_val.status, Status.EXCEPTION, "Status should be EXCEPTION after invalid input")
         self.assertIsNone(range_val.value, "Value should be None when validation fails")
@@ -35,13 +35,13 @@ class TestRangeValidatedValue(unittest.TestCase):
         valid_values = [Status.OK, Status.EXCEPTION]
 
         # EnumValidatedValue should use EnumValidationStrategy and TypeValidationStrategy
-        enum_val = EnumValidatedValue(Status.OK, Status, valid_values)
+        enum_val = ConstrainedEnumValue(Status.OK, Status, valid_values)
         enum_result = enum_val._run_pipeline(Status.OK, "validation successful")
         self.assertEqual(enum_result.status, Status.OK, "EnumValidatedValue should pass validation with correct enum")
         self.assertEqual(enum_result.details, "validation successful", "EnumValidatedValue should pass all validations")
 
         # RangeValidatedValue should use RangeValidationStrategy and TypeValidationStrategy
-        range_val = RangeValidatedValue(15, 10, 20)
+        range_val = ConstrainedRangeValue(15, 10, 20)
         range_result = range_val._run_pipeline(15, "validation successful")
         self.assertEqual(range_result.status, Status.OK, "RangeValidatedValue should pass validation with correct range")
         self.assertEqual(range_result.details, "validation successful", "RangeValidatedValue should pass all validations")
@@ -54,7 +54,7 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
         - Should return a Response with Status.EXCEPTION and a clear type message.
         """
         try:
-            rv = RangeValidatedValue("5", 1, 10)
+            rv = ConstrainedRangeValue("5", 1, 10)
         except TypeError:
             self.fail("Value must be one of 'int',got 'str'")
 
@@ -62,14 +62,16 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
 
 
     def test_enum_validation_reports_type_before_membership(self):
-        rv = EnumValidatedValue(42, str, ["a", "b"])
+        rv = ConstrainedEnumValue(42, str, ["a", "b"])
         self.assertEqual(rv.status, Status.EXCEPTION)
         self.assertEqual(rv.details, "Value must be one of 'str', got 'int'")
 
+
+# noinspection DuplicatedCode
 class TestValidatedValueOrderingPreFix(unittest.TestCase):
     def test_ordering_across_statuses_should_raise(self):
-        ok = RangeValidatedValue(5, 1, 10)
-        bad = RangeValidatedValue("5", 1, 10)
+        ok = ConstrainedRangeValue(5, 1, 10)
+        bad = ConstrainedRangeValue("5", 1, 10)
         self.assertEqual(ok.status, Status.OK)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
@@ -83,8 +85,8 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
             _ = bad <= ok
 
     def test_ordering_across_validated_classes_should_raise(self):
-        r = RangeValidatedValue(5, 1, 10)
-        e = EnumValidatedValue(5, int, [3, 5, 7])
+        r = ConstrainedRangeValue(5, 1, 10)
+        e = ConstrainedEnumValue(5, int, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
 
@@ -100,22 +102,22 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
 
 class TestValidatedValueErrorsAndMessages(unittest.TestCase):
     def test_ordering_value_error_message_exact(self):
-        ok = RangeValidatedValue(5, 1, 10)
-        bad = RangeValidatedValue("5", 1, 10)
+        ok = ConstrainedRangeValue(5, 1, 10)
+        bad = ConstrainedRangeValue("5", 1, 10)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
         with self.assertRaises(ValueError) as ctx:
             _ = ok < bad
-        self.assertIn('RangeValidatedValue: cannot compare invalid values', str(ctx.exception))
+        self.assertIn('ConstrainedRangeValue: cannot compare invalid values', str(ctx.exception))
 
         with self.assertRaises(ValueError) as ctx2:
             _ = bad <= ok
-        self.assertIn('RangeValidatedValue: cannot compare invalid values', str(ctx2.exception))
+        self.assertIn('ConstrainedRangeValue: cannot compare invalid values', str(ctx2.exception))
 
 class TestValidatedValueEqualitySemantics(unittest.TestCase):
     def test_equality_false_when_either_invalid(self):
-        ok = RangeValidatedValue(5, 1, 10)
-        bad = RangeValidatedValue("5", 1, 10)
+        ok = ConstrainedRangeValue(5, 1, 10)
+        bad = ConstrainedRangeValue("5", 1, 10)
         self.assertEqual(ok.status, Status.OK)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
@@ -123,8 +125,8 @@ class TestValidatedValueEqualitySemantics(unittest.TestCase):
         self.assertNotEqual(bad, ok)
 
     def test_cross_class_equality_is_false(self):
-        r = RangeValidatedValue(5, 1, 10)
-        e = EnumValidatedValue(5, int, [3, 5, 7])
+        r = ConstrainedRangeValue(5, 1, 10)
+        e = ConstrainedEnumValue(5, int, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
 
@@ -133,9 +135,9 @@ class TestValidatedValueEqualitySemantics(unittest.TestCase):
 
 class TestValidatedValueSortingBehaviour(unittest.TestCase):
     def test_sorting_list_with_invalid_raises_value_error(self):
-        a = RangeValidatedValue(3, 1, 10)       # OK
-        b = RangeValidatedValue(7, 1, 10)       # OK
-        bad = RangeValidatedValue("x", 1, 10)   # EXCEPTION
+        a = ConstrainedRangeValue(3, 1, 10)       # OK
+        b = ConstrainedRangeValue(7, 1, 10)       # OK
+        bad = ConstrainedRangeValue("x", 1, 10)   # EXCEPTION
 
         items = [b, bad, a]
         with self.assertRaises(ValueError):
@@ -143,30 +145,30 @@ class TestValidatedValueSortingBehaviour(unittest.TestCase):
 
 class TestValidatedValueRepr(unittest.TestCase):
     def test_repr_range_valid_ok(self):
-        v = RangeValidatedValue(5, 1, 10)  # Status.OK
-        self.assertEqual(repr(v), "RangeValidatedValue(_value=5, status=OK)")
+        v = ConstrainedRangeValue(5, 1, 10)  # Status.OK
+        self.assertEqual(repr(v), "ConstrainedRangeValue(_value=5, status=OK)")
 
     def test_repr_range_invalid_preserves_raw_value_and_status(self):
-        v = RangeValidatedValue("5", 1, 10)  # Status.EXCEPTION
+        v = ConstrainedRangeValue("5", 1, 10)  # Status.EXCEPTION
         # Note the quotes around  '5' because of !r
-        self.assertEqual(repr(v), "RangeValidatedValue(_value=None, status=EXCEPTION)")
+        self.assertEqual(repr(v), "ConstrainedRangeValue(_value=None, status=EXCEPTION)")
 
     def test_repr_enum_valid_ok(self):
-        e = EnumValidatedValue(5, int, [3, 5, 7])  # Status.OK
-        self.assertEqual(repr(e), "EnumValidatedValue(_value=5, status=OK)")
+        e = ConstrainedEnumValue(5, int, [3, 5, 7])  # Status.OK
+        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=5, status=OK)")
 
     def test_repr_enum_invalid(self):
-        e = EnumValidatedValue(4, int, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
-        self.assertEqual(repr(e), "EnumValidatedValue(_value=None, status=EXCEPTION)")
+        e = ConstrainedEnumValue(4, int, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
+        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=EXCEPTION)")
 
     def test_repr_handles_none_value_when_ok(self):
         # Edge case: if you ever allow None as a valid value
-        e = EnumValidatedValue(None, type(None), [None])  # Status.OK
-        self.assertEqual(repr(e), "EnumValidatedValue(_value=None, status=OK)")
+        e = ConstrainedEnumValue(None, type(None), [None])  # Status.OK
+        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=OK)")
 
 class TestRangeTypes(unittest.TestCase):
     def test_bounds_type_must_match_making_sure_first_test(self):
-        bad = RangeValidatedValue(5, 10, "100")
+        bad = ConstrainedRangeValue(5, 10, "100")
         self.assertEqual(bad.status, Status.EXCEPTION)
         self.assertEqual(bad.details, "value:10 must match Type of value:100, as type 'str'")
 

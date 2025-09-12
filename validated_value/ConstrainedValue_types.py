@@ -3,14 +3,14 @@ from decimal import Decimal
 from fractions import Fraction
 from typing import List, Tuple, Type
 
-from .value import CanonicalValue, PipeLineStrategy
+from .value import ConstrainedValue, PipeLineStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy, \
     SameTypeValidationStrategy
 from .response import T
 from .status import Status
 
-class EnumValidatedValue(CanonicalValue[T]):
+class ConstrainedEnumValue(ConstrainedValue[T]):
     def get_strategies(self) -> List[PipeLineStrategy]:
         return self._strategies
 
@@ -23,7 +23,7 @@ class EnumValidatedValue(CanonicalValue[T]):
         super().__init__(value, success_details)
 
 
-class RangeValidatedValue(CanonicalValue[T]):
+class ConstrainedRangeValue(ConstrainedValue[T]):
     @classmethod
     def infer_valid_types_from_value(cls, value) -> Tuple[Type, ...]:
         t = type(value)
@@ -45,7 +45,7 @@ class RangeValidatedValue(CanonicalValue[T]):
         # Initialize the strategies for this subclass
         self._strategies = [
             SameTypeValidationStrategy(low_value, high_value),
-            TypeValidationStrategy(RangeValidatedValue.infer_valid_types_from_value(low_value)),
+            TypeValidationStrategy(ConstrainedRangeValue.infer_valid_types_from_value(low_value)),
             RangeValidationStrategy(low_value, high_value)
         ]
         super().__init__(value, success_details)
@@ -75,7 +75,7 @@ class RangeValidatedValue(CanonicalValue[T]):
 """
 
 
-class StrictValidatedValue(CanonicalValue[T], ABC):
+class StrictValidatedValue(ConstrainedValue[T], ABC):
     """
     A stricter version of ValidatedValue that raises an exception immediately if the validation fails.
     """
