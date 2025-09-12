@@ -9,7 +9,7 @@ Core value and validation abstractions.
 
 - Value[T]: typed wrapper providing equality and ordering between *same-class* values.
 - ValidationStrategy: pluggable unit that returns a StatusResponse (OK/EXCEPTION).
-- TransformationStrategy: pluggable unit that transform returns Response(OK/EXCEPTION and Value)
+- TransformationStrategy: pluggable unit that transforms and returns a Response (OK/EXCEPTION and Value).
 - ConstrainedValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
 """
 @dataclass(frozen=True, slots=True)
@@ -68,7 +68,7 @@ class Value(Generic[T]):
         return hash((self.__class__, self._value))
 
     def __str__(self) -> str:
-         return str(self.value)
+        return str(self.value)
 
     def __format__(self, format_spec: str) -> str:
         # Delegate formatting to the underlying value
@@ -81,13 +81,13 @@ class PipeLineStrategy(ABC):
 
 class ValidationStrategy(PipeLineStrategy):
     @abstractmethod
-    def validate(self, value) -> StatusResponse:
+    def validate(self, value: T) -> StatusResponse:
         """Perform validation and return a Response."""
         pass
 
 class TransformationStrategy(PipeLineStrategy):
     @abstractmethod
-    def transform(self, value) -> Response:
+    def transform(self, value: T) -> Response[T]:
         """Perform validation and return a Response."""
         pass
 
@@ -204,6 +204,22 @@ class ConstrainedValue(Value[T], ABC):
 
     def __bool__(self) -> bool:
         return self.status == Status.OK
+
+    def __str__(self) -> str:
+        # Print the canonical value when valid; show a concise marker when invalid
+        return str(self._value) if self.status == Status.OK else f"<invalid {self.__class__.__name__}: {self.details}>"
+
+    def unwrap(self) -> T:
+        """Return the validated value or raise if invalid (ergonomic for callers)."""
+        if self.status != Status.OK:
+            raise ValueError(f"{self.__class__.__name__} invalid: {self.details}")
+        return self._value
+
+    @property
+    def ok(self) -> bool:
+        """Convenience alias for status == Status.OK."""
+        return self.status == Status.OK
+
 
 
 

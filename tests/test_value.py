@@ -309,5 +309,96 @@ class TestValueImmutability(unittest.TestCase):
             s._value = 11
         self.assertEqual(s.value, 10)
 
+class _PassThroughStr(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.OK, details="ok", value=value)
+
+class _FailStr(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.EXCEPTION, details="boom", value=None)
+
+class ValidIntStr(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_PassThroughStr()]
+
+class InvalidIntStr(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_FailStr()]
+
+class TestConstrainedValueStr(unittest.TestCase):
+    def test_str_valid_prints_canonical_value(self):
+        x = ValidIntStr(123)
+        self.assertEqual(x.status, Status.OK)
+        self.assertEqual(str(x), "123")
+
+    def test_str_invalid_shows_marker_and_details(self):
+        y = InvalidIntStr(7)
+        self.assertEqual(y.status, Status.EXCEPTION)
+        s = str(y)
+        # Format should be: <invalid {ClassName}: {details}>
+        self.assertTrue(s.startswith(f"<invalid {y.__class__.__name__}: "))
+        self.assertIn("boom", s)  # the details from the failing transform
+        self.assertTrue(s.endswith(">"))
+
+class _PassThroughUnwrap(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.OK, details="ok", value=value)
+
+class _FailUnwrap(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.EXCEPTION, details="boom unwrap", value=None)
+
+class ValidIntUnwrap(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_PassThroughUnwrap()]
+
+class InvalidIntUnwrap(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_FailUnwrap()]
+
+class TestConstrainedValueUnwrap(unittest.TestCase):
+    def test_unwrap_returns_value_when_valid(self):
+        x = ValidIntUnwrap(456)
+        self.assertEqual(x.status, Status.OK)
+        self.assertEqual(x.unwrap(), 456)
+
+    def test_unwrap_raises_with_details_when_invalid(self):
+        y = InvalidIntUnwrap(999)
+        self.assertEqual(y.status, Status.EXCEPTION)
+        with self.assertRaisesRegex(ValueError, r"InvalidIntUnwrap.*boom unwrap"):
+            y.unwrap()
+class _PassThroughOk(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.OK, details="ok", value=value)
+
+class _FailOk(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.EXCEPTION, details="boom ok", value=None)
+
+class ValidIntOk(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_PassThroughOk()]
+
+class InvalidIntOk(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_FailOk()]
+
+class TestConstrainedValueOk(unittest.TestCase):
+    def test_ok_true_when_status_ok(self):
+        v = ValidIntOk(1)
+        self.assertEqual(v.status, Status.OK)
+        self.assertTrue(v.ok)
+
+    def test_ok_false_when_exception(self):
+        v = InvalidIntOk(1)
+        self.assertEqual(v.status, Status.EXCEPTION)
+        self.assertFalse(v.ok)
+
+    def test_ok_matches_bool(self):
+        good = ValidIntOk(5)
+        bad = InvalidIntOk(5)
+        self.assertEqual(good.ok, bool(good))
+        self.assertEqual(bad.ok, bool(bad))
+
     if __name__ == '__main__':
         unittest.main()
