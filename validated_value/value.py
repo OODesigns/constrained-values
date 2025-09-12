@@ -59,6 +59,14 @@ class Value(Generic[T]):
     def __hash__(self):
         return hash((self.__class__, self._value))
 
+    def __str__(self) -> str:
+         return str(self.value)
+
+    def __format__(self, format_spec: str) -> str:
+        # Delegate formatting to the underlying value
+        return format(self.value, format_spec)
+
+
 
 class PipeLineStrategy(ABC):
     pass

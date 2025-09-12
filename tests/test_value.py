@@ -241,5 +241,32 @@ class TestConstrainedValueValueHashing(unittest.TestCase):
         with self.assertRaises(KeyError):
             _ = d[InvalidInt(42)]
 
+class TestValueStrAndFormat(unittest.TestCase):
+    def test_str_matches_underlying_int(self):
+        v = Value(123)
+        self.assertEqual(str(v), str(123))
+
+    def test_str_matches_underlying_float(self):
+        v = Value(3.14159)
+        self.assertEqual(str(v), str(3.14159))
+
+    def test_str_matches_underlying_str(self):
+        v = Value("hello")
+        self.assertEqual(str(v), "hello")
+
+    def test_format_numeric_precision(self):
+        v = Value(12.3456)
+        self.assertEqual(format(v, ".2f"), format(12.3456, ".2f"))
+        # f-string uses __format__ under the hood
+        self.assertEqual(f"{v:.2f}", f"{12.3456:.2f}")
+
+    def test_format_int_padding(self):
+        v = Value(42)
+        self.assertEqual(format(v, "04d"), format(42, "04d"))
+
+    def test_format_string_alignment(self):
+        v = Value("hi")
+        self.assertEqual(format(v, "^5"), format("hi", "^5"))  # center align in width 5
+
     if __name__ == '__main__':
         unittest.main()
