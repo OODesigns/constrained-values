@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Generic, List, Optional, Callable, Union
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, T, StatusResponse
@@ -11,15 +12,22 @@ Core value and validation abstractions.
 - TransformationStrategy: pluggable unit that transform returns Response(OK/EXCEPTION and Value)
 - ConstrainedValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
 """
+@dataclass(frozen=True, slots=True)
 class Value(Generic[T]):
     """
-    A base class to represent a generic value. Provides comparison methods for equality, less than,
-    and less than or equal to comparisons between instances of derived classes.
-    """
-    __slots__ = ("_value",)
+    A base class to represent a generic immutable value.
 
-    def __init__(self, value: T):
-        self._value = value
+    Immutability & memory:
+      - Implemented via dataclass(frozen=True) which prevents attribute mutation after __init__.
+      - slots=True avoids per-instance __dict__ and disallows arbitrary attributes.
+
+    Equality & ordering:
+      - Equality compares *same-class* values on the underlying data.
+      - Ordering is only defined between the same concrete class.
+    """
+    # Stored payload; immutable thanks to frozen dataclass
+    _value: T
+    # allow during __init__ only
 
     def _class_is_same(self, other) -> bool:
         return other.__class__ is self.__class__
@@ -105,8 +113,8 @@ class ConstrainedValue(Value[T], ABC):
     def __init__(self, value:T, success_details:str = DEFAULT_SUCCESS_MESSAGE):
         result = self._run_pipeline(value, success_details)
         super().__init__(result.value)
-        self._status = result.status
-        self._details = result.details
+        object.__setattr__(self, "_status", result.status)
+        object.__setattr__(self, "_details", result.details)
 
     def _run_pipeline(self, value, success_details:str)-> Response[T]:
         """

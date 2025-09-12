@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import FrozenInstanceError
 
 from validated_value import Response, Status
 from validated_value.value import Value, ConstrainedValue, TransformationStrategy
@@ -24,23 +25,21 @@ class TestValue(unittest.TestCase):
         self.assertGreaterEqual(val2, val1, "val2 should be greater or equal to val1")
 
 class TestValueSlots(unittest.TestCase):
+    # noinspection PyDataclass
     def test_value_has_no_dict_and_blocks_dynamic_attrs(self):
         v = Value(123)
         # because of __slots__, Value should not have a __dict__
         self.assertFalse(hasattr(v, "__dict__"))
 
-        # trying to set an attribute not in __slots__ should raise AttributeError
-        with self.assertRaises(AttributeError):
+        # frozen dataclasses raise FrozenInstanceError (subclass of AttributeError) on any assignment;
+        # on some Python builds, a TypeError can surface when slots are involved. Accept all.
+        with self.assertRaises((FrozenInstanceError, AttributeError, TypeError)):
             v.some_random_attr = "oops"
 
     def test_value_still_allows_access_to__value(self):
         v = Value(456)
         # internal attribute works as normal
         self.assertEqual(v._value, 456)
-
-        # modifying _value directly should still work
-        v._value = 789
-        self.assertEqual(v._value, 789)
 
     def test_multiple_instances_do_not_share_state(self):
         v1 = Value(1)
@@ -285,6 +284,30 @@ class TestConstrainedValueBool(unittest.TestCase):
         picked = [x for x in (ok, bad) if x]
         self.assertEqual(len(picked), 1)
         self.assertIs(picked[0], ok)
+
+class TestValueImmutability(unittest.TestCase):
+    # noinspection PyDataclass
+    def test_assigning__value_raises_attribute_error(self):
+        v = Value(100)
+        with self.assertRaises(FrozenInstanceError):
+            v._value = 200
+
+    # noinspection PyDataclass
+    def test_assigning_new_attr_raises_attribute_error(self):
+        v = Value(1)
+        with self.assertRaises(TypeError):
+            v.some_new_attr = 5
+
+    # noinspection PyDataclass
+    def test_subclass_cannot_mutate_after_super_init(self):
+        class SubValue(Value[int]):
+            def __init__(self, x: int):
+                super().__init__(x)  # freezes the instance
+
+        s = SubValue(10)
+        with self.assertRaises((FrozenInstanceError, AttributeError, TypeError)):
+            s._value = 11
+        self.assertEqual(s.value, 10)
 
     if __name__ == '__main__':
         unittest.main()

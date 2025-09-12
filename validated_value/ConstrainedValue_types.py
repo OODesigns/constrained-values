@@ -11,19 +11,22 @@ from .response import T
 from .status import Status
 
 class ConstrainedEnumValue(ConstrainedValue[T]):
+    __slots__ = ("_strategies",)
+
     def get_strategies(self) -> List[PipeLineStrategy]:
         return self._strategies
 
     def __init__(self, value, valid_types, valid_values, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         # Initialize the strategies for this subclass
-        self._strategies = [
+        object.__setattr__(self, "_strategies",[
             TypeValidationStrategy(valid_types),
             EnumValidationStrategy(valid_values)
-        ]
+        ])
         super().__init__(value, success_details)
 
 
 class ConstrainedRangeValue(ConstrainedValue[T]):
+    __slots__ = ("_strategies",)
     @classmethod
     def infer_valid_types_from_value(cls, value) -> Tuple[Type, ...]:
         t = type(value)
@@ -43,11 +46,11 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
 
     def __init__(self, value, low_value, high_value, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         # Initialize the strategies for this subclass
-        self._strategies = [
+        object.__setattr__(self, "_strategies",[
             SameTypeValidationStrategy(low_value, high_value),
             TypeValidationStrategy(ConstrainedRangeValue.infer_valid_types_from_value(low_value)),
             RangeValidationStrategy(low_value, high_value)
-        ]
+        ])
         super().__init__(value, success_details)
 
 """
@@ -73,8 +76,6 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
    In essence, MyClass handles the initial validation logic, and StrictValidatedValue adds the additional strict behavior (e.g., raising an exception).
    
 """
-
-
 class StrictValidatedValue(ConstrainedValue[T], ABC):
     """
     A stricter version of ValidatedValue that raises an exception immediately if the validation fails.
