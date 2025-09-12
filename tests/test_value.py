@@ -1,5 +1,8 @@
 import unittest
-from validated_value.value import Value
+
+from validated_value import Response, Status
+from validated_value.value import Value, ConstrainedValue, TransformationStrategy
+
 
 class TestValue(unittest.TestCase):
     def test_value_equality(self):
@@ -156,6 +159,87 @@ class TestValueOrdering(unittest.TestCase):
         x = BreakLeSame(2)
         y = BreakLeSame(2)
         self.assertGreaterEqual(x , y)
+
+class TestValueHashing(unittest.TestCase):
+    def test_value_is_hashable(self):
+        v = Value(10)
+        h = hash(v)  # should not raise
+        self.assertIsInstance(h, int)
+
+    def test_equal_values_have_equal_hashes(self):
+        a = Value(10)
+        b = Value(10)
+        self.assertEqual(a, b)
+        self.assertEqual(hash(a), hash(b))
+
+    def test_set_deduplicates_equal_values(self):
+        a = Value(10)
+        b = Value(10)
+        s = {a, b}
+        self.assertEqual(len(s), 1)
+
+    def test_dict_uses_value_as_key(self):
+        a1 = Value(10)
+        a2 = Value(10)
+        d = {a1: "first", a2: "second"}
+        # keys are equal, so dict should have a single entry updated to 'second'
+        self.assertEqual(len(d), 1)
+        # Fetch using a fresh equal instance should work too
+        self.assertEqual(d[Value(10)], "second")
+
+class _PassThrough(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.OK, details="ok", value=value)
+
+class ValidInt(ConstrainedValue[int]):
+      def get_strategies(self):
+         return [_PassThrough()]
+
+class _Fail(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.EXCEPTION, details="boom", value=None)
+
+class InvalidInt(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [_Fail()]
+
+class TestConstrainedValueValueHashing(unittest.TestCase):
+    def test_valid_constrained_hash_and_dict_behavior(self):
+        x1 = ValidInt(42)
+        x2 = ValidInt(42)
+        self.assertEqual(x1.status, Status.OK)
+        self.assertEqual(x2.status, Status.OK)
+        # equal & hashable
+        self.assertEqual(x1, x2)
+        self.assertIsInstance(hash(x1), int)
+        self.assertEqual(hash(x1), hash(x2))
+        # set/dict should deduplicate
+        s = {x1, x2}
+        self.assertEqual(len(s), 1)
+        d = {x1: "a", x2: "b"}
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d[ValidInt(42)], "b")
+
+    def test_invalid_constrained_hash_and_dict_behavior(self):
+        y1 = InvalidInt(42)
+        y2 = InvalidInt(42)
+        self.assertEqual(y1.status, Status.EXCEPTION)
+        self.assertEqual(y2.status, Status.EXCEPTION)
+        # invalid values are NOT equal to each other by design
+        self.assertNotEqual(y1, y2)
+        # but should still be hashable (policy choice: allow hashing even when invalid)
+        h1 = hash(y1)
+        h2 = hash(y2)
+        self.assertIsInstance(h1, int)
+        self.assertIsInstance(h2, int)
+        # dict/set should keep them as separate keys
+        s = {y1, y2}
+        self.assertEqual(len(s), 2)
+        d = {y1: "a", y2: "b"}
+        self.assertEqual(len(d), 2)
+        # a fresh InvalidInt shouldn't match an existing key
+        with self.assertRaises(KeyError):
+            _ = d[InvalidInt(42)]
 
     if __name__ == '__main__':
         unittest.main()

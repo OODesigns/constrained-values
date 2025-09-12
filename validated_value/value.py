@@ -56,6 +56,9 @@ class Value(Generic[T]):
         res = self._compare(other, lambda x, y: x >= y)
         return NotImplemented if res is NotImplemented else res
 
+    def __hash__(self):
+        return hash((self.__class__, self._value))
+
 
 class PipeLineStrategy(ABC):
     pass
@@ -174,4 +177,14 @@ class ConstrainedValue(Value[T], ABC):
 
     def __ge__(self, other):
         return self._is_comparing(other, super().__ge__)
+
+    def __hash__(self):
+        if self.status == Status.OK:
+            # Match value-based equality for valid instances
+            return hash((self.__class__, self._value))
+        # For invalid instances: still hashable, but distinct from any valid instance
+        # Don’t include .details (too volatile); status is enough.
+        return hash((self.__class__, self.status))
+
+
 
