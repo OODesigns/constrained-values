@@ -194,5 +194,8 @@ class ConstrainedValue(Value[T], ABC):
         # Don’t include .details (too volatile); status is enough.
         return hash((self.__class__, self.status))
 
+    def __bool__(self) -> bool:
+        return self.status == Status.OK
+
 
 

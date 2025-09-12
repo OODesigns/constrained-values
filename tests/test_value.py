@@ -268,5 +268,23 @@ class TestValueStrAndFormat(unittest.TestCase):
         v = Value("hi")
         self.assertEqual(format(v, "^5"), format("hi", "^5"))  # center align in width 5
 
+class TestConstrainedValueBool(unittest.TestCase):
+    def test_bool_true_when_ok(self):
+        v = ValidInt(123)
+        self.assertEqual(v.status, Status.OK)
+        self.assertTrue(bool(v))
+
+    def test_bool_false_when_exception(self):
+        v = InvalidInt(123)
+        self.assertEqual(v.status, Status.EXCEPTION)
+        self.assertFalse(bool(v))
+
+    def test_if_usage_filters_only_valid(self):
+        ok = ValidInt(1)
+        bad = InvalidInt(2)
+        picked = [x for x in (ok, bad) if x]
+        self.assertEqual(len(picked), 1)
+        self.assertIs(picked[0], ok)
+
     if __name__ == '__main__':
         unittest.main()
