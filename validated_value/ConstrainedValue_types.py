@@ -1,14 +1,15 @@
 from abc import ABC
 from decimal import Decimal
 from fractions import Fraction
-from typing import List, Tuple, Type
+from typing import List, Tuple, Type, TypeVar
 
 from .value import ConstrainedValue, PipeLineStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy, \
     SameTypeValidationStrategy, CoerceToType
-from .response import T
 from .status import Status
+
+T = TypeVar("T")
 
 class ConstrainedEnumValue(ConstrainedValue[T]):
     __slots__ = ("_strategies",)
