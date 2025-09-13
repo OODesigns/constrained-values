@@ -1,8 +1,10 @@
+from decimal import Decimal
+from fractions import Fraction
 from typing import Any, Sequence, Tuple
 
-from .response import StatusResponse
+from .response import StatusResponse, Response
 from .status import Status
-from .value import ValidationStrategy
+from .value import ValidationStrategy, TransformationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 
 def get_types(the_types: Any) -> tuple[type, ...]:
@@ -96,4 +98,58 @@ class EnumValidationStrategy(ValidationStrategy[Any]):
                 details=f"Value must be one of {self.valid_values}, got {value}"
                 )
         return StatusResponse(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE)
+
+
+def _err(e: Exception | str) -> Response[object]:
+    msg = str(e) if isinstance(e, Exception) else e
+    return Response(status=Status.EXCEPTION, details=msg, value=None)
+
+
+class CoerceToType(TransformationStrategy[object, object]):
+    """
+    Coerce the current value to a concrete target type (usually type(low_value)),
+    so range comparisons are performed like-for-like.
+
+    Examples:
+      - int -> float
+      - int/float/str -> Decimal
+      - int/float -> Fraction
+
+    Notes:
+      - Converting float -> Decimal can carry binary fp artifacts; consider tightening if needed.
+      - bool is a subclass of int; decide whether you want to accept it upstream.
+    """
+    __slots__ = ("_target_type",)
+
+    def __init__(self, target_type: type):
+        self._target_type = target_type
+
+    def transform(self, value: object) -> Response[object]:
+        # Already desired type
+        if isinstance(value, self._target_type):
+            return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=value)
+
+        try:
+            # Common numeric normalizations
+            if self._target_type is float and isinstance(value, int):
+                return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=float(value))
+
+            if self._target_type is Decimal:
+                # Choose your policy re: floats -> Decimal; str(...) avoids binary artifacts.
+                if isinstance(value, float):
+                    coerced = Decimal(str(value))
+                else:
+                    coerced = Decimal(value)  # handles int/str/Decimal
+                return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=coerced)
+
+            if self._target_type is Fraction:
+                return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=Fraction(value))
+
+            # Generic fallback: attempt constructor
+            coerced = self._target_type(value)
+            return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=coerced)
+
+        except Exception as e:
+            return Response(status=Status.EXCEPTION, details=str(e), value=None)
+
 

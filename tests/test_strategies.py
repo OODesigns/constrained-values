@@ -1,4 +1,6 @@
 import unittest
+from decimal import Decimal
+from fractions import Fraction
 from typing import List
 
 from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
@@ -6,6 +8,7 @@ from validated_value.status import Status
 from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
 from validated_value.strategies import (
     EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
+    CoerceToType,
 )
 from validated_value.response import Response
 from validated_value.value import ConstrainedValue, TransformationStrategy, PipeLineStrategy
@@ -195,6 +198,51 @@ class TestTypeValidationStrategyConstructors(unittest.TestCase):
         self.assertEqual(strat.validate(1).status, Status.EXCEPTION)
         # normalized
         self.assertEqual(strat.valid_types, (bytes, bytearray))
+
+class TestCoerceToType(unittest.TestCase):
+    def test_pass_through_when_already_target_float(self):
+        r = CoerceToType(float).transform(1.25)
+        self.assertEqual(r.status, Status.OK)
+        self.assertIsInstance(r.value, float)
+        self.assertEqual(r.value, 1.25)
+
+    def test_int_to_float(self):
+        r = CoerceToType(float).transform(3)
+        self.assertEqual(r.status, Status.OK)
+        self.assertIsInstance(r.value, float)
+        self.assertEqual(r.value, 3.0)
+
+    def test_int_to_decimal(self):
+        r = CoerceToType(Decimal).transform(3)
+        self.assertEqual(r.status, Status.OK)
+        self.assertIs(type(r.value), Decimal)
+        self.assertEqual(r.value, Decimal(3))
+
+    def test_float_to_decimal_avoids_binary_fp_artifacts(self):
+        # Uses Decimal(str(value)) per your implementation
+        r = CoerceToType(Decimal).transform(0.1)
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(r.value, Decimal("0.1"))
+
+    def test_int_to_fraction(self):
+        r = CoerceToType(Fraction).transform(2)
+        self.assertEqual(r.status, Status.OK)
+        self.assertIs(type(r.value), Fraction)
+        self.assertEqual(r.value, Fraction(2, 1))
+
+    def test_generic_constructor_fallback_str_to_complex(self):
+        r = CoerceToType(complex).transform("3")
+        self.assertEqual(r.status, Status.OK)
+        self.assertEqual(r.value, complex(3))
+
+    def test_un_coercible_yields_exception_response(self):
+        class Weird:
+            pass
+
+        r = CoerceToType(int).transform(Weird())  # int(Weird()) -> TypeError
+        self.assertEqual(r.status, Status.EXCEPTION)
+        self.assertIsNone(r.value)
+
 
 if __name__ == '__main__':
     unittest.main()

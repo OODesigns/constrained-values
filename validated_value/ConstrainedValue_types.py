@@ -6,7 +6,7 @@ from typing import List, Tuple, Type
 from .value import ConstrainedValue, PipeLineStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .strategies import TypeValidationStrategy, EnumValidationStrategy, RangeValidationStrategy, \
-    SameTypeValidationStrategy
+    SameTypeValidationStrategy, CoerceToType
 from .response import T
 from .status import Status
 
@@ -49,6 +49,7 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
         object.__setattr__(self, "_strategies",[
             SameTypeValidationStrategy(low_value, high_value),
             TypeValidationStrategy(ConstrainedRangeValue.infer_valid_types_from_value(low_value)),
+            CoerceToType(type(low_value)),
             RangeValidationStrategy(low_value, high_value)
         ])
         super().__init__(value, success_details)

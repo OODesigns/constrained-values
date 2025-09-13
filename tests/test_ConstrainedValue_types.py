@@ -1,4 +1,7 @@
 import unittest
+from decimal import Decimal
+from fractions import Fraction
+
 from validated_value.status import Status
 from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
 
@@ -172,6 +175,27 @@ class TestRangeTypes(unittest.TestCase):
         self.assertEqual(bad.status, Status.EXCEPTION)
         self.assertEqual(bad.details, "Type mismatch: expected type 'str' of value 100 to match 'int' of value 10")
 
+class TestConstrainedRangeValueWithCoercion(unittest.TestCase):
+    # --- integration-style tests exercising the CRV pipeline with CoerceToType(type(low_value)) ---
+
+    def test_int_value_with_float_bounds_is_coerced_to_float(self):
+        cv = ConstrainedRangeValue(3, 0.0, 10.0)  # int with float bounds
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIsInstance(cv.value, float)
+        self.assertEqual(cv.value, 3.0)
+
+    def test_int_value_with_decimal_bounds_is_coerced_to_decimal(self):
+        # Note: by design, TypeValidationStrategy for Decimal bounds typically allows (int, Decimal), not float
+        cv = ConstrainedRangeValue(3, Decimal("0"), Decimal("10"))
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIs(type(cv.value), Decimal)
+        self.assertEqual(cv.value, Decimal(3))
+
+    def test_int_value_with_fraction_bounds_is_coerced_to_fraction(self):
+        cv = ConstrainedRangeValue(1, Fraction(0, 1), Fraction(3, 2))
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIs(type(cv.value), Fraction)
+        self.assertEqual(cv.value, Fraction(1, 1))
 
 if __name__ == '__main__':
     unittest.main()
