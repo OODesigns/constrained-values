@@ -399,6 +399,43 @@ class TestConstrainedValueOk(unittest.TestCase):
         bad = InvalidIntOk(5)
         self.assertEqual(good.ok, bool(good))
         self.assertEqual(bad.ok, bool(bad))
+class _PassThroughFmt(TransformationStrategy):
+    def transform(self, value):
+        # Keep value as-is, succeed
+        return Response(status=Status.OK, details="ok fmt", value=value)
+
+class _FailFmt(TransformationStrategy):
+    def transform(self, value):
+        # Force failure so instance is invalid
+        return Response(status=Status.EXCEPTION, details="boom fmt", value=None)
+
+class ValidFloatFmt(ConstrainedValue[float]):
+    def get_strategies(self):
+        return [_PassThroughFmt()]
+
+class InvalidFloatFmt(ConstrainedValue[float]):
+    def get_strategies(self):
+        return [_FailFmt()]
+
+class TestConstrainedValueFormat(unittest.TestCase):
+    def test_format_valid_delegates_to_underlying_value(self):
+        v = ValidFloatFmt(12.3456)
+        # Delegates to underlying value's __format__
+        self.assertEqual(format(v, ".2f"), format(12.3456, ".2f"))
+        self.assertEqual(f"{v:.3f}", f"{12.3456:.3f}")
+
+    def test_format_invalid_returns_str_marker(self):
+        iv = InvalidFloatFmt(99.9)
+        self.assertEqual(iv.status, Status.EXCEPTION)
+        # Formatting an invalid instance should return the same as str(), not "None"
+        out1 = format(iv, ".2f")
+        out2 = f"{iv}"
+        self.assertEqual(out1, str(iv))
+        self.assertEqual(out2, str(iv))
+        self.assertTrue(out1.startswith(f"<invalid {iv.__class__.__name__}: "))
+        self.assertIn("boom fmt", out1)
+        self.assertTrue(out1.endswith(">"))
+
 
     if __name__ == '__main__':
         unittest.main()

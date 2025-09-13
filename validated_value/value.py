@@ -1,17 +1,19 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Generic, List, Optional, Callable, Union
-from .constants import DEFAULT_SUCCESS_MESSAGE
-from .response import Response, T, StatusResponse
-from .status import Status
 """
 Core value and validation abstractions.
 
 - Value[T]: typed wrapper providing equality and ordering between *same-class* values.
 - ValidationStrategy: pluggable unit that returns a StatusResponse (OK/EXCEPTION).
-- TransformationStrategy: pluggable unit that transforms and returns a Response (OK/EXCEPTION and Value).
-- ConstrainedValue[T]: Value that runs a sequence of strategies before exposing .value/.status/.details.
+- TransformationStrategy: pluggable unit that transforms and returns a Response[OutT].
+- ConstrainedValue: runs a sequence of strategies on a raw input (which may differ from the final T) before exposing .value/.status/.details.
 """
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Generic, List, Optional, Callable, Union, TypeVar
+from .constants import DEFAULT_SUCCESS_MESSAGE
+from .response import Response, StatusResponse
+from .status import Status
+T = TypeVar("T")        # final canonical type
+
 @dataclass(frozen=True, slots=True)
 class Value(Generic[T]):
     """
@@ -27,7 +29,6 @@ class Value(Generic[T]):
     """
     # Stored payload; immutable thanks to frozen dataclass
     _value: T
-    # allow during __init__ only
 
     def _class_is_same(self, other) -> bool:
         return other.__class__ is self.__class__
@@ -74,28 +75,34 @@ class Value(Generic[T]):
         # Delegate formatting to the underlying value
         return format(self.value, format_spec)
 
-
+InT = TypeVar("InT")    # raw input type
+MidT = TypeVar("MidT")  # intermediate type(s) in the pipeline
+OutT = TypeVar("OutT")  # output of a single transform step
 
 class PipeLineStrategy(ABC):
+    """Marker base for pipeline steps (either ValidationStrategy or TransformationStrategy)."""
     pass
 
-class ValidationStrategy(PipeLineStrategy):
+class ValidationStrategy(Generic[MidT], PipeLineStrategy):
     @abstractmethod
-    def validate(self, value: T) -> StatusResponse:
-        """Perform validation and return a Response."""
+    def validate(self, value: MidT) -> StatusResponse:
+        """Perform validation and return a StatusResponse."""
         pass
 
-class TransformationStrategy(PipeLineStrategy):
+class TransformationStrategy(Generic[InT, OutT], PipeLineStrategy):
     @abstractmethod
-    def transform(self, value: T) -> Response[T]:
-        """Perform validation and return a Response."""
+    def transform(self, value: InT) -> Response[OutT]:
+        """Transform the value and return a Response[OutT]."""
         pass
 
 class ConstrainedValue(Value[T], ABC):
     """
+
     A value processed by a pipeline of transformation and validation strategies.
 
-    Each instance wraps a raw _value and runs a series of strategies in order.
+    Each instance accepts a raw `value_in` (which may not yet be of the final type `T`)
+    and runs a series of strategies in order to produce a canonical value and status.
+
     These strategies can either transform the value (e.g., sanitize, clean, or convert it into a canonical form)
     or validate it against specific rules.
 
@@ -104,24 +111,39 @@ class ConstrainedValue(Value[T], ABC):
      - details: a human-readable message from the failing strategy
      - value: the final, transformed and validated value, or None if the process fails.
 
-    """
+    Equality & ordering:
+      - Two instances are equal only if they are the same concrete class AND both are valid (Status.OK) AND their underlying values are equal.
+      - Ordering comparisons raise if either side is invalid.
+
+    Truthiness:
+      - bool(x) is True iff status == Status.OK (see .ok).
+
+    Hashing:
+      - Valid instances hash by (class, value); invalid instances hash by (class, status).
+        This keeps invalids distinct from valid instances but may cluster many invalids in one bucket.
+
+    Raises:
+      - ValueError: when calling unwrap() on an invalid instance (status != Status.OK).
+     """
     def __repr__(self):
         return f"{self.__class__.__name__}(_value={self._value!r}, status={self.status.name})"
 
     __slots__ = ("_status", "_details")
 
-    def __init__(self, value:T, success_details:str = DEFAULT_SUCCESS_MESSAGE):
-        result = self._run_pipeline(value, success_details)
+    def __init__(self, value_in: InT, success_details: str = DEFAULT_SUCCESS_MESSAGE):
+        result = self._run_pipeline(value_in, success_details)
         super().__init__(result.value)
         object.__setattr__(self, "_status", result.status)
         object.__setattr__(self, "_details", result.details)
 
-    def _run_pipeline(self, value, success_details:str)-> Response[T]:
+    def _run_pipeline(self, value_in: InT, success_details:str)-> Response[T]:
         """
-        Run validation strategies in order. If any returns EXCEPTION, short-circuit
-        and propagate that Response. Otherwise, propagate the final (possibly transformed) value.
+        The current value is threaded through the pipeline; transformation steps may change its
+        type (e.g., sanitize or convert), and validation steps check the current value without
+        changing it. On the first EXCEPTION status, the pipeline short-circuits and returns that
+        failure response; otherwise, it returns OK with the final canonical value.
         """
-        current_value = value  # Start with the initial value
+        current_value = value_in  # Start with the initial value
 
         for strategy in tuple(self.get_strategies()):
             response = None
@@ -208,6 +230,13 @@ class ConstrainedValue(Value[T], ABC):
     def __str__(self) -> str:
         # Print the canonical value when valid; show a concise marker when invalid
         return str(self._value) if self.status == Status.OK else f"<invalid {self.__class__.__name__}: {self.details}>"
+
+    # Ensures invalid values format to the same marker as __str__ (not "None").
+    # This keeps f-strings readable even when the instance is invalid.
+    def __format__(self, format_spec: str) -> str:
+        if self.status == Status.OK:
+            return format(self._value, format_spec)
+        return str(self)
 
     def unwrap(self) -> T:
         """Return the validated value or raise if invalid (ergonomic for callers)."""

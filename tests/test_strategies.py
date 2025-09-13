@@ -5,7 +5,7 @@ from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
 from validated_value.status import Status
 from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
 from validated_value.strategies import (
-    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy,
+    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
 )
 from validated_value.response import Response
 from validated_value.value import ConstrainedValue, TransformationStrategy, PipeLineStrategy
@@ -90,7 +90,7 @@ class TestTypeValidationStrategy(unittest.TestCase):
         # Test invalid string value
         response = strategy.validate("string")
         self.assertEqual(response.status, Status.EXCEPTION)
-        self.assertEqual(response.details, "Value must be one of 'int','float', got 'str'")
+        self.assertEqual(response.details, "Value must be one of 'int', 'float', got 'str'")
 
     def test_single_type_as_list(self):
         # Test that a single type in a list works the same as passing it directly
@@ -129,7 +129,7 @@ class TestSameTypeValidationStrategy(unittest.TestCase):
         r = s.validate(None)
         self.assertEqual(r.status, Status.EXCEPTION)
         # Message should mention both type names in a human-friendly way.
-        self.assertEqual(r.details, "value:1 must match Type of value:2.0, as type 'float'")
+        self.assertEqual(r.details, "Type mismatch: expected type 'float' of value 2.0 to match 'int' of value 1")
 
     def test_bool_vs_int_is_strict_and_fails(self):
         """
@@ -149,6 +149,52 @@ class TestSameTypeValidationStrategy(unittest.TestCase):
 
         bad = SameTypeValidationStrategy(A(), B()).validate(0)
         self.assertEqual(bad.status, Status.EXCEPTION)
+
+class TestGetTypes(unittest.TestCase):
+    def test_accepts_single_type(self):
+        self.assertEqual(get_types(int), (int,))
+
+    def test_accepts_sequence_of_types(self):
+        self.assertEqual(get_types([int, str]), (int, str))
+
+    def test_raises_on_non_type_single(self):
+        with self.assertRaises(TypeError):
+            get_types("int")  # not a type object
+
+    def test_raises_on_mixed_sequence(self):
+        with self.assertRaises(TypeError):
+            get_types([int, "str"])  # second element is not a type
+
+class TestTypeValidationStrategyConstructors(unittest.TestCase):
+    def test_single_type_int(self):
+        # Accept a single type
+        strat = TypeValidationStrategy(int)
+        ok = strat.validate(5)
+        bad = strat.validate("x")
+        from validated_value.status import Status
+        self.assertEqual(ok.status, Status.OK)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+        # valid_types normalized to a tuple
+        self.assertEqual(strat.valid_types, (int,))
+
+    def test_multiple_types_list(self):
+        # Accept a list of types
+        strat = TypeValidationStrategy([int, float])
+        from validated_value.status import Status
+        self.assertEqual(strat.validate(3.14).status, Status.OK)
+        self.assertEqual(strat.validate(7).status, Status.OK)
+        self.assertEqual(strat.validate("nope").status, Status.EXCEPTION)
+        # normalized
+        self.assertEqual(strat.valid_types, (int, float))
+
+    def test_multiple_types_tuple(self):
+        # Accept a tuple of types
+        strat = TypeValidationStrategy((bytes, bytearray))
+        from validated_value.status import Status
+        self.assertEqual(strat.validate(bytearray(b"a")).status, Status.OK)
+        self.assertEqual(strat.validate(1).status, Status.EXCEPTION)
+        # normalized
+        self.assertEqual(strat.valid_types, (bytes, bytearray))
 
 if __name__ == '__main__':
     unittest.main()

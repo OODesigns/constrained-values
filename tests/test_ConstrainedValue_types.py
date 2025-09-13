@@ -170,7 +170,8 @@ class TestRangeTypes(unittest.TestCase):
     def test_bounds_type_must_match_making_sure_first_test(self):
         bad = ConstrainedRangeValue(5, 10, "100")
         self.assertEqual(bad.status, Status.EXCEPTION)
-        self.assertEqual(bad.details, "value:10 must match Type of value:100, as type 'str'")
+        self.assertEqual(bad.details, "Type mismatch: expected type 'str' of value 100 to match 'int' of value 10")
+
 
 if __name__ == '__main__':
     unittest.main()
