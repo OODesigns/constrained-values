@@ -7,6 +7,7 @@ from .status import Status
 from .value import ValidationStrategy, TransformationStrategy
 from .constants import DEFAULT_SUCCESS_MESSAGE
 
+
 def get_types(the_types: Any) -> tuple[type, ...]:
     """
     Normalize a single type or a sequence of types into a tuple[type, ...],
@@ -22,10 +23,12 @@ def get_types(the_types: Any) -> tuple[type, ...]:
 
     return tuple(the_types)  # type: ignore[return-value]
 
+
 class TypeValidationStrategy(ValidationStrategy[Any]):
     """
     Ensure the runtime type of 'value' is one of the allowed types.
     """
+
     def __init__(self, valid_types: Sequence[type] | type):
         self.valid_types: Tuple[type, ...] = get_types(valid_types)
 
@@ -39,11 +42,13 @@ class TypeValidationStrategy(ValidationStrategy[Any]):
             )
         return StatusResponse(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE)
 
+
 class SameTypeValidationStrategy(ValidationStrategy[Any]):
     """
     Ensure two reference values have the same *type*. Useful when you want 'value'
     to later be compared/combined with similarly-typed sentinels.
     """
+
     def __init__(self, value_a: Any, value_b: Any):
         self.value_a = value_a
         self.value_b = value_b
@@ -61,11 +66,13 @@ class SameTypeValidationStrategy(ValidationStrategy[Any]):
             )
         return StatusResponse(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE)
 
+
 class RangeValidationStrategy(ValidationStrategy[Any]):
     """
     Validate that 'value' is within [low_value, high_value]. Assumes 'value' and the
     bounds are comparable via '<' and '>'.
     """
+
     def __init__(self, low_value: Any, high_value: Any):
         self.low_value = low_value
         self.high_value = high_value
@@ -88,6 +95,7 @@ class EnumValidationStrategy(ValidationStrategy[Any]):
     """
     Validate that 'value' is one of a provided collection (using membership test).
     """
+
     def __init__(self, valid_values: Sequence[Any]):
         self.valid_values = valid_values
 
@@ -96,14 +104,8 @@ class EnumValidationStrategy(ValidationStrategy[Any]):
             return StatusResponse(
                 status=Status.EXCEPTION,
                 details=f"Value must be one of {self.valid_values}, got {value}"
-                )
+            )
         return StatusResponse(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE)
-
-
-def _err(e: Exception | str) -> Response[object]:
-    msg = str(e) if isinstance(e, Exception) else e
-    return Response(status=Status.EXCEPTION, details=msg, value=None)
-
 
 class CoerceToType(TransformationStrategy[object, object]):
     """
@@ -153,3 +155,12 @@ class CoerceToType(TransformationStrategy[object, object]):
             return Response(status=Status.EXCEPTION, details=str(e), value=None)
 
 
+class FailValidationStrategy(ValidationStrategy[str]):
+    """First-class strategy that fails immediately with a human-readable message."""
+    __slots__ = ("_details",)
+
+    def __init__(self, details: str):
+        self._details = details
+
+    def validate(self, value: Any) -> StatusResponse:
+        return StatusResponse(status=Status.EXCEPTION, details=self._details)

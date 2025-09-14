@@ -8,7 +8,7 @@ Core value and validation abstractions.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, List, Optional, Callable, Union, TypeVar
+from typing import Generic, List, Optional, Callable, Union, TypeVar, Any
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, StatusResponse
 from .status import Status
@@ -85,13 +85,13 @@ class PipeLineStrategy(ABC):
 
 class ValidationStrategy(Generic[MidT], PipeLineStrategy):
     @abstractmethod
-    def validate(self, value: MidT) -> StatusResponse:
+    def validate(self, value: MidT) -> StatusResponse: # pragma: no cover
         """Perform validation and return a StatusResponse."""
         pass
 
 class TransformationStrategy(Generic[InT, OutT], PipeLineStrategy):
     @abstractmethod
-    def transform(self, value: InT) -> Response[OutT]:
+    def transform(self, value: InT) -> Response[OutT]: # pragma: no cover
         """Transform the value and return a Response[OutT]."""
         pass
 
@@ -136,6 +136,21 @@ class ConstrainedValue(Value[T], ABC):
         object.__setattr__(self, "_status", result.status)
         object.__setattr__(self, "_details", result.details)
 
+    @classmethod
+    def _apply_strategy(cls, strategy: PipeLineStrategy, current_value: Any) -> Response[Any]:
+        """
+        Run a single pipeline strategy and normalize the result to a Response[Any].
+        - For transformations: return the strategy's Response.
+        - For validations: wrap the StatusResponse into a Response carrying current_value.
+        """
+        if isinstance(strategy, TransformationStrategy):
+            return strategy.transform(current_value)
+        elif isinstance(strategy, ValidationStrategy):
+            # ValidationStrategy: keep the current value unchanged
+            sr = strategy.validate(current_value)
+            return Response(status=sr.status, details=sr.details, value=current_value)
+        return Response(status=Status.EXCEPTION, details="Missing strategy handler", value=None)
+
     def _run_pipeline(self, value_in: InT, success_details:str)-> Response[T]:
         """
         The current value is threaded through the pipeline; transformation steps may change its
@@ -145,20 +160,12 @@ class ConstrainedValue(Value[T], ABC):
         """
         current_value = value_in  # Start with the initial value
 
-        for strategy in tuple(self.get_strategies()):
-            response = None
-            if isinstance(strategy, TransformationStrategy):
-                response = strategy.transform(current_value)
-                if response.status == Status.OK:
-                    # On success, update the value for the next step in the pipeline.
-                    current_value = response.value
-
-            elif isinstance(strategy, ValidationStrategy):
-                response = strategy.validate(current_value)
-
-            # Check status after either strategy type and short-circuit on failure.
-            if response and response.status == Status.EXCEPTION:
-                return Response(status=Status.EXCEPTION, details=response.details, value=None)
+        for strategy in self.get_strategies():
+            resp = self._apply_strategy(strategy, current_value)
+            if resp.status == Status.EXCEPTION:
+                return Response(status=Status.EXCEPTION, details=resp.details, value=None)
+            # OK → thread the (possibly transformed) value
+            current_value = resp.value
 
         return Response(status=Status.OK, details=success_details, value=current_value)
 

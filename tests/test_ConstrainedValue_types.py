@@ -1,25 +1,14 @@
 import unittest
 from decimal import Decimal
+from enum import Enum
 from fractions import Fraction
 
-from validated_value.status import Status
-from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
+from constrained_values import Response
+from constrained_values.status import Status
+from constrained_values.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictValidatedValue
+from constrained_values.strategies import FailValidationStrategy
+from constrained_values.value import TransformationStrategy
 
-class TestEnumValidatedValue(unittest.TestCase):
-    def test_enum_validated_value(self):
-        valid_values = [Status.OK, Status.EXCEPTION]
-        enum_val = ConstrainedEnumValue(Status.OK, Status, valid_values)
-
-        self.assertEqual(enum_val.status, Status.OK, "Status should be OK after validation")
-        self.assertIsNotNone(enum_val.value, "Validated value should not be None")
-        self.assertEqual(enum_val.value, Status.OK, "Enum value should be OK")
-
-    def test_enum_invalid_value(self):
-        valid_values = [Status.OK, Status.EXCEPTION]
-        invalid_val = ConstrainedEnumValue('Invalid', Status, valid_values)
-
-        self.assertEqual(invalid_val.status, Status.EXCEPTION, "Status should be EXCEPTION after invalid input")
-        self.assertIsNone(invalid_val.value, "Value should be None when validation fails")
 
 class TestRangeValidatedValue(unittest.TestCase):
     def test_range_validated_value(self):
@@ -56,16 +45,12 @@ class TestTypeChecksAreInCorrectOrder(unittest.TestCase):
         - Should NOT raise a raw TypeError when value is non-comparable (e.g., str vs int).
         - Should return a Response with Status.EXCEPTION and a clear type message.
         """
-        try:
-            rv = ConstrainedRangeValue("5", 1, 10)
-        except TypeError:
-            self.fail("Value must be one of 'int',got 'str'")
-
+        rv = ConstrainedRangeValue("5", 1, 10)
         self.assertEqual(rv.status, Status.EXCEPTION)
 
 
     def test_enum_validation_reports_type_before_membership(self):
-        rv = ConstrainedEnumValue(42, str, ["a", "b"])
+        rv = ConstrainedEnumValue(42, ["a", "b"])
         self.assertEqual(rv.status, Status.EXCEPTION)
         self.assertEqual(rv.details, "Value must be one of 'str', got 'int'")
 
@@ -89,7 +74,7 @@ class TestValidatedValueOrderingPreFix(unittest.TestCase):
 
     def test_ordering_across_validated_classes_should_raise(self):
         r = ConstrainedRangeValue(5, 1, 10)
-        e = ConstrainedEnumValue(5, int, [3, 5, 7])
+        e = ConstrainedEnumValue(5, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
 
@@ -129,7 +114,7 @@ class TestValidatedValueEqualitySemantics(unittest.TestCase):
 
     def test_cross_class_equality_is_false(self):
         r = ConstrainedRangeValue(5, 1, 10)
-        e = ConstrainedEnumValue(5, int, [3, 5, 7])
+        e = ConstrainedEnumValue(5, [3, 5, 7])
         self.assertEqual(r.status, Status.OK)
         self.assertEqual(e.status, Status.OK)
 
@@ -157,16 +142,16 @@ class TestValidatedValueRepr(unittest.TestCase):
         self.assertEqual(repr(v), "ConstrainedRangeValue(_value=None, status=EXCEPTION)")
 
     def test_repr_enum_valid_ok(self):
-        e = ConstrainedEnumValue(5, int, [3, 5, 7])  # Status.OK
+        e = ConstrainedEnumValue(5, [3, 5, 7])  # Status.OK
         self.assertEqual(repr(e), "ConstrainedEnumValue(_value=5, status=OK)")
 
     def test_repr_enum_invalid(self):
-        e = ConstrainedEnumValue(4, int, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
+        e = ConstrainedEnumValue(4, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
         self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=EXCEPTION)")
 
     def test_repr_handles_none_value_when_ok(self):
         # Edge case: if you ever allow None as a valid value
-        e = ConstrainedEnumValue(None, type(None), [None])  # Status.OK
+        e = ConstrainedEnumValue(None, [None])  # Status.OK
         self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=OK)")
 
 class TestRangeTypes(unittest.TestCase):
@@ -197,5 +182,195 @@ class TestConstrainedRangeValueWithCoercion(unittest.TestCase):
         self.assertIs(type(cv.value), Fraction)
         self.assertEqual(cv.value, Fraction(1, 1))
 
-if __name__ == '__main__':
-    unittest.main()
+class DataOrder(Enum):
+    MSB = True
+    LSB = False
+
+
+class Mixed(Enum):
+    A = "a"
+    B = "b"
+
+class TestConstrainedEnumValueNewAPI(unittest.TestCase):
+    def test_accepts_enum_class_and_underlying_values(self):
+        # Using Enum class: should accept underlying values directly
+        cv = ConstrainedEnumValue(True, DataOrder)
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIs(cv.value, True)
+
+        cv2 = ConstrainedEnumValue(False, DataOrder)
+        self.assertEqual(cv2.status, Status.OK)
+        self.assertIs(cv2.value, False)
+
+    def test_accepts_enum_members_and_normalizes_to_underlying(self):
+        # Using Enum class: should accept enum members and normalize to .value
+        cv = ConstrainedEnumValue(DataOrder.MSB, DataOrder)
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIs(cv.value, True)
+
+        cv2 = ConstrainedEnumValue(DataOrder.LSB, DataOrder)
+        self.assertEqual(cv2.status, Status.OK)
+        self.assertIs(cv2.value, False)
+
+    def test_rejects_integers_even_when_bool_is_expected(self):
+        # Exact type check: 1/0 are ints, not bools
+        bad1 = ConstrainedEnumValue(1, DataOrder)
+        bad0 = ConstrainedEnumValue(0, DataOrder)
+        self.assertEqual(bad1.status, Status.EXCEPTION)
+        self.assertEqual(bad0.status, Status.EXCEPTION)
+
+    def test_sequence_of_enum_members_is_supported(self):
+        # Passing a *sequence of enum members* should behave like passing the Enum class
+        allowed = [Mixed.A, Mixed.B]
+        cv = ConstrainedEnumValue(Mixed.A, allowed)      # member accepted, normalized to 'a'
+        self.assertEqual(cv.status, Status.OK)
+        self.assertEqual(cv.value, "a")
+
+        cv2 = ConstrainedEnumValue("b", allowed)         # underlying value also accepted
+        self.assertEqual(cv2.status, Status.OK)
+        self.assertEqual(cv2.value, "b")
+
+        bad = ConstrainedEnumValue("c", allowed)         # not in allowed
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+    def test_empty_enum_or_empty_sequence_raises_configuration_error(self):
+        class Empty(Enum):
+            pass
+
+        bad = ConstrainedEnumValue(True, Empty)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+        bad = ConstrainedEnumValue("x", [])
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+class _EmptyEnum(Enum):
+    pass
+
+class _Color(Enum):
+    RED = "r"
+    BLUE = "b"
+
+class TestConstrainedEnumValueNoThrows(unittest.TestCase):
+    def test_empty_enum_yields_exception_status(self):
+        cv = ConstrainedEnumValue("anything", _EmptyEnum)
+        self.assertEqual(cv.status, Status.EXCEPTION)
+        self.assertIn("no members", cv.details.lower())
+
+    def test_empty_sequence_yields_exception_status(self):
+        cv = ConstrainedEnumValue("x", [])
+        self.assertEqual(cv.status, Status.EXCEPTION)
+        self.assertIn("non-empty", cv.details.lower())
+
+    def test_sequence_of_enum_members_supported_and_normalized(self):
+        allowed = [_Color.RED, _Color.BLUE]  # members
+        cv = ConstrainedEnumValue(_Color.RED, allowed)
+        self.assertEqual(cv.status, Status.OK)
+        self.assertEqual(cv.value, "r")  # normalized to underlying value
+
+        cv2 = ConstrainedEnumValue("b", allowed)  # underlying ok too
+        self.assertEqual(cv2.status, Status.OK)
+        self.assertEqual(cv2.value, "b")
+
+    def test_exact_type_is_enforced(self):
+        # boolean example: ints are not accepted when underlying is bool
+        class MyBool(Enum):
+            T = True
+            F = False
+        bad = ConstrainedEnumValue(1, MyBool)
+        self.assertEqual(bad.status, Status.EXCEPTION)
+
+class TestConstrainedEnumValuePlainValues(unittest.TestCase):
+    def test_plain_values_accepts_allowed_value(self):
+        # valid_values is a plain sequence (no Enum): should accept matching values directly
+        cv = ConstrainedEnumValue("a", ["a", "b"])
+        self.assertEqual(cv.status, Status.OK)
+        self.assertEqual(cv.value, "a")
+
+    def test_plain_values_rejects_wrong_type(self):
+        # Exact runtime type check should fail: ints not accepted when allowed are strings
+        cv = ConstrainedEnumValue(42, ["a", "b"])
+        self.assertEqual(cv.status, Status.EXCEPTION)
+
+    def test_plain_values_rejects_value_not_in_allowed(self):
+        cv = ConstrainedEnumValue("c", ["a", "b"])
+        self.assertEqual(cv.status, Status.EXCEPTION)
+
+    def test_plain_values_accepts_none_if_list_includes_none(self):
+        cv = ConstrainedEnumValue(None, [None, "x"])
+        self.assertEqual(cv.status, Status.OK)
+        self.assertIsNone(cv.value)
+
+class TestStrictValidatedValue(unittest.TestCase):
+    def test_success_does_not_raise(self):
+        class AlwaysOK(StrictValidatedValue[int]):
+            def get_strategies(self):
+                return []  # no steps -> OK
+
+        x = AlwaysOK(42)
+        self.assertEqual(x.status, Status.OK)
+        self.assertEqual(x.value, 42)
+
+    def test_failure_raises_value_error_with_details(self):
+        class AlwaysFail(StrictValidatedValue[int]):
+            def get_strategies(self):
+                return [FailValidationStrategy("boom")]
+
+        with self.assertRaises(ValueError) as ctx:
+            AlwaysFail(123)
+
+        msg = str(ctx.exception)
+        self.assertIn("Validation failed for value '123'", msg)
+        self.assertIn("boom", msg)
+
+    def test_transform_then_fail_still_raises(self):
+        class Inc(TransformationStrategy[int, int]):
+            def transform(self, value: int) -> Response[int]:
+                return Response(status=Status.OK, details="inc", value=value + 1)
+
+        class TransformThenFail(StrictValidatedValue[int]):
+            def get_strategies(self):
+                return [Inc(), FailValidationStrategy("blocked")]
+
+        with self.assertRaises(ValueError) as ctx:
+            TransformThenFail(10)
+
+        self.assertIn("blocked", str(ctx.exception))
+
+class TestConstrainedRangeValueInferValidTypes(unittest.TestCase):
+    def test_int_returns_int_only(self):
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value(123),
+            (int,),
+        )
+
+    def test_float_returns_int_and_float(self):
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value(1.5),
+            (int, float),
+        )
+
+    def test_decimal_returns_int_and_decimal(self):
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value(Decimal("2")),
+            (int, Decimal),
+        )
+
+    def test_fraction_returns_int_and_fraction(self):
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value(Fraction(1, 3)),
+            (int, Fraction),
+        )
+
+    def test_default_exact_type_only_with_str(self):
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value("hello"),
+            (str,),
+        )
+
+    def test_default_exact_type_only_with_custom_type(self):
+        class Widget:
+            pass
+        self.assertEqual(
+            ConstrainedRangeValue.infer_valid_types_from_value(Widget()),
+            (Widget,),
+        )

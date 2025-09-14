@@ -1,9 +1,9 @@
 import unittest
 from dataclasses import FrozenInstanceError
+from typing import Any, List
 
-from validated_value import Response, Status
-from validated_value.value import Value, ConstrainedValue, TransformationStrategy
-
+from constrained_values import Response, Status
+from constrained_values.value import Value, ConstrainedValue, TransformationStrategy, PipeLineStrategy
 
 class TestValue(unittest.TestCase):
     def test_value_equality(self):
@@ -136,14 +136,14 @@ class TestValueRepr(unittest.TestCase):
 class BreakLtSame(Value[int]):
     def __init__(self, v):
         super().__init__(v)
-    def __lt__(self, other):
+    def __lt__(self, other): # pragma: no cover
         # If Python fell back to reflected __lt__, we'd hit this and the test would fail.
         raise RuntimeError("Reflected __lt__ should not be used")
 
 class BreakLeSame(Value[int]):
     def __init__(self, v):
         super().__init__(v)
-    def __le__(self, other):
+    def __le__(self, other): # pragma: no cover
         raise RuntimeError("Reflected __le__ should not be used")
 
 class TestValueOrdering(unittest.TestCase):
@@ -436,6 +436,107 @@ class TestConstrainedValueFormat(unittest.TestCase):
         self.assertIn("boom fmt", out1)
         self.assertTrue(out1.endswith(">"))
 
+class _UnknownStrategy(PipeLineStrategy):
+    """Deliberately not a ValidationStrategy or TransformationStrategy."""
+    pass
 
-    if __name__ == '__main__':
-        unittest.main()
+class UsesUnknownStrategy(ConstrainedValue[int]):
+    def get_strategies(self):
+        # Returning a strategy with no handler should trigger an EXCEPTION response
+        return [_UnknownStrategy()]
+
+class TestConstrainedValueMissingStrategyHandler(unittest.TestCase):
+    def test_pipeline_with_unknown_strategy_sets_exception_status_and_message(self):
+        x = UsesUnknownStrategy(123)
+        self.assertEqual(x.status, Status.EXCEPTION)
+        self.assertIn("Missing strategy handler", x.details)
+        # str() should use the invalid marker
+        s = str(x)
+        self.assertTrue(s.startswith(f"<invalid {x.__class__.__name__}: "))
+        self.assertTrue(s.endswith(">"))
+class AnotherPassThrough(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.OK, details="ok2", value=value)
+
+class AnotherValidInt(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [AnotherPassThrough()]
+
+class AnotherFail(TransformationStrategy):
+    def transform(self, value):
+        return Response(status=Status.EXCEPTION, details="boom2", value=None)
+
+class AnotherInvalidInt(ConstrainedValue[int]):
+    def get_strategies(self):
+        return [AnotherFail()]
+
+class TestConstrainedValueSameStatus(unittest.TestCase):
+    def test_same_status_true_when_both_ok(self):
+        a = ValidInt(1)
+        b = AnotherValidInt(2)
+        self.assertTrue(a._same_status(b))
+
+    def test_same_status_true_when_both_exception(self):
+        a = InvalidInt(1)
+        b = AnotherInvalidInt(2)
+        self.assertTrue(a._same_status(b))
+
+    def test_same_status_false_when_mixed(self):
+        a = ValidInt(1)
+        b = InvalidInt(2)
+        self.assertFalse(a._same_status(b))
+
+class _Fail2(TransformationStrategy):
+    def transform(self, value: Any) -> Response:
+        return Response(status=Status.EXCEPTION, details="boom2", value=None)
+
+class ProbeComparable(ConstrainedValue[int]):
+    def get_strategies(self) -> List:
+        return [_PassThrough()]
+
+    def probe_compare(self, other: "ProbeComparable", spy):
+        # delegate to _is_comparing with provided spy callable
+        return self._is_comparing(other, spy)
+
+class BadComparable(ConstrainedValue[int]):
+    def get_strategies(self) -> List:
+        return [_Fail2()]
+
+    def probe_compare(self, other: "ConstrainedValue[int]", spy):
+        return self._is_comparing(other, spy)
+
+class UnrelatedComparable(ConstrainedValue[int]):
+    def get_strategies(self) -> List:
+        return [_PassThrough()]
+
+class Spy:
+    def __init__(self):
+        self.calls = []
+    def __call__(self, o):
+        self.calls.append(o)
+        return True  # pretend comparator result
+
+class TestIsComparing(unittest.TestCase):
+    def test_invokes_func_when_same_class_and_both_valid(self):
+        a = ProbeComparable(1)
+        b = ProbeComparable(2)
+        spy = Spy()
+        out = a.probe_compare(b, spy)
+        self.assertIs(out, True)
+        self.assertEqual(spy.calls, [b])  # spy saw 'other'
+
+    def test_raises_when_either_side_invalid_same_class(self):
+        a = BadComparable(1)
+        b = BadComparable(2)
+        spy = Spy()
+        with self.assertRaises(ValueError):
+            a.probe_compare(b, spy)
+        self.assertEqual(spy.calls, [])   # delegate not called
+
+    def test_returns_notimplemented_when_different_classes(self):
+        a = ProbeComparable(1)
+        b = UnrelatedComparable(2)
+        spy = Spy()
+        out = a.probe_compare(b, spy)
+        self.assertIs(out, NotImplemented)
+        self.assertEqual(spy.calls, [])   # delegate not called

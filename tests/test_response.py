@@ -2,7 +2,7 @@ import typing
 import unittest
 from dataclasses import FrozenInstanceError
 
-from validated_value import Response, Status, T
+from constrained_values import Response, Status, T
 
 
 class TestResponseOptionalSemantics(unittest.TestCase):

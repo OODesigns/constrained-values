@@ -5,6 +5,7 @@ from .status import Status
 
 T = TypeVar('T')
 
+
 @dataclass(frozen=True)
 class StatusResponse(Generic[T]):
     """
@@ -16,6 +17,7 @@ class StatusResponse(Generic[T]):
     """
     status: Status
     details: str
+
 
 @dataclass(frozen=True)
 class Response(StatusResponse[T]):

@@ -3,26 +3,23 @@ from decimal import Decimal
 from fractions import Fraction
 from typing import List
 
-from validated_value.constants import DEFAULT_SUCCESS_MESSAGE
-from validated_value.status import Status
-from validated_value.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
-from validated_value.strategies import (
-    EnumValidationStrategy, RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
-    CoerceToType,
+from constrained_values.constants import DEFAULT_SUCCESS_MESSAGE
+from constrained_values.status import Status
+from constrained_values.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
+from constrained_values.strategies import (
+    RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
+    CoerceToType, FailValidationStrategy,
 )
-from validated_value.response import Response
-from validated_value.value import ConstrainedValue, TransformationStrategy, PipeLineStrategy
+from constrained_values.response import Response
+from constrained_values.value import ConstrainedValue, TransformationStrategy, PipeLineStrategy
 
 
 class TestValidatedValueStrategies(unittest.TestCase):
     def test_enum_validated_value_strategies(self):
-        valid_values = [Status.OK, Status.EXCEPTION]
-        enum_val = ConstrainedEnumValue(Status.OK, Status, valid_values)
+        enum_val = ConstrainedEnumValue(Status.OK, Status)
 
         # Test that EnumValidatedValue has specific strategies
-        self.assertEqual(len(enum_val._strategies), 2, "EnumValidatedValue should have 2 validation strategies")
-        self.assertIsInstance(enum_val._strategies[1], EnumValidationStrategy, "Second strategy should be EnumValidationStrategy")
-        self.assertIsInstance(enum_val._strategies[0], TypeValidationStrategy, "First strategy should be TypeValidationStrategy")
+        self.assertEqual(len(enum_val._strategies), 3, "EnumValidatedValue should have 3 validation strategies")
 
         # Prove that EnumValidatedValue strategies are not shared with RangeValidatedValue
         range_val = ConstrainedRangeValue(15, 10, 20)
@@ -174,7 +171,7 @@ class TestTypeValidationStrategyConstructors(unittest.TestCase):
         strat = TypeValidationStrategy(int)
         ok = strat.validate(5)
         bad = strat.validate("x")
-        from validated_value.status import Status
+        from constrained_values.status import Status
         self.assertEqual(ok.status, Status.OK)
         self.assertEqual(bad.status, Status.EXCEPTION)
         # valid_types normalized to a tuple
@@ -183,7 +180,7 @@ class TestTypeValidationStrategyConstructors(unittest.TestCase):
     def test_multiple_types_list(self):
         # Accept a list of types
         strat = TypeValidationStrategy([int, float])
-        from validated_value.status import Status
+        from constrained_values.status import Status
         self.assertEqual(strat.validate(3.14).status, Status.OK)
         self.assertEqual(strat.validate(7).status, Status.OK)
         self.assertEqual(strat.validate("nope").status, Status.EXCEPTION)
@@ -193,7 +190,7 @@ class TestTypeValidationStrategyConstructors(unittest.TestCase):
     def test_multiple_types_tuple(self):
         # Accept a tuple of types
         strat = TypeValidationStrategy((bytes, bytearray))
-        from validated_value.status import Status
+        from constrained_values.status import Status
         self.assertEqual(strat.validate(bytearray(b"a")).status, Status.OK)
         self.assertEqual(strat.validate(1).status, Status.EXCEPTION)
         # normalized
@@ -243,6 +240,50 @@ class TestCoerceToType(unittest.TestCase):
         self.assertEqual(r.status, Status.EXCEPTION)
         self.assertIsNone(r.value)
 
+class TestFailValidationStrategy(unittest.TestCase):
+    def test_fail_validation_returns_exception_status(self):
+        s = FailValidationStrategy("boom")
+        r = s.validate("anything")
+        self.assertEqual(r.status, Status.EXCEPTION)
+        self.assertEqual(r.details, "boom")
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_fail_validation_in_pipeline_short_circuits_and_sets_details(self):
+        class AlwaysFails(ConstrainedValue[int]):
+            def get_strategies(self) -> List[PipeLineStrategy]:
+                return [FailValidationStrategy("nope")]
+        x = AlwaysFails(123)
+        self.assertEqual(x.status, Status.EXCEPTION)
+        self.assertEqual(x.details, "nope")
+        self.assertIsNone(x.value)
+
+    def test_transform_then_fail_validation_still_fails(self):
+        class Inc(TransformationStrategy):
+            def transform(self, value):
+                return Response(status=Status.OK, details="inc", value=value + 1)
+
+        class TransformThenFail(ConstrainedValue[int]):
+            def get_strategies(self) -> List[PipeLineStrategy]:
+                return [Inc(), FailValidationStrategy("blocked")]
+        x = TransformThenFail(10)
+        self.assertEqual(x.status, Status.EXCEPTION)
+        self.assertEqual(x.details, "blocked")
+        # value should be None because pipeline failed
+        self.assertIsNone(x.value)
+
+class TestRangeValidationStrategyBounds(unittest.TestCase):
+    def test_below_low_returns_exception_and_message(self):
+        s = RangeValidationStrategy(10, 20)
+        r = s.validate(9)
+        self.assertEqual(r.status, Status.EXCEPTION)
+        self.assertEqual(r.details, "Value must be greater than or equal to 10, got 9")
+
+    def test_above_high_returns_exception_and_message(self):
+        s = RangeValidationStrategy(10, 20)
+        r = s.validate(21)
+        self.assertEqual(r.status, Status.EXCEPTION)
+        self.assertEqual(r.details, "Value must be less than or equal to 20, got 21")
+
+    def test_edges_are_ok(self):
+        s = RangeValidationStrategy(10, 20)
+        self.assertEqual(s.validate(10).status, Status.OK)
+        self.assertEqual(s.validate(20).status, Status.OK)
