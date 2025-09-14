@@ -1,0 +1,34 @@
+"""
+Example 29 — Record list validation
+Validate a list of small records where each field uses a ConstrainedValue.
+"""
+from enum import Enum
+from typing import List, Dict, Any
+
+from constrained_values import ConstrainedRangeValue, ConstrainedEnumValue
+
+
+class Role(Enum):
+    USER = "user"
+    ADMIN = "admin"
+
+def validate_records(rows: List[Dict[str, Any]]):
+    out = []
+    errs = []
+    for i, row in enumerate(rows):
+        uid = ConstrainedRangeValue(row.get("id"), 1, 10**9)
+        role = ConstrainedEnumValue(row.get("role"), Role)
+        if uid.ok and role.ok:
+            out.append({"id": uid.value, "role": role.value})
+        else:
+            errs.append((i, uid.details if not uid.ok else None, role.details if not role.ok else None))
+    return out, errs
+
+def main():
+    rows = [{"id": 1, "role": "user"}, {"id": "x", "role": "owner"}, {"id": 2, "role": Role.ADMIN}]
+    ok, bad = validate_records(rows)
+    print("OK:", ok)
+    print("ERRS:", bad)
+
+if __name__ == "__main__":
+    main()
