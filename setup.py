@@ -4,7 +4,7 @@ setup(
     name='constrained-values',
     version='0.1.0',
     packages=find_packages(),
-    author='OODesigns',
+    author='Michael Lindre of OODesigns',
     author_email='cvl@oodesigns.com',
     description='A library for creating type-safe value objects with complex transformation and validation pipelines.',
     long_description=open('README.md').read(),

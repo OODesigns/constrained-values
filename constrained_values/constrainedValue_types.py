@@ -119,7 +119,40 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
 
 
 class ConstrainedRangeValue(ConstrainedValue[T]):
-    __slots__ = ("_strategies",)
+    """
+    A constrained numeric value bounded between ``low_value`` and ``high_value`` (inclusive).
+
+    Pipeline structure
+    ------------------
+    The validation/transform pipeline is built in three parts:
+
+      1. **Type strategies** (``_type_strategies``):
+         - ``SameTypeValidationStrategy`` ensures the low/high bounds are of the same type.
+         - ``TypeValidationStrategy`` infers acceptable input types from the bounds
+           (e.g., float bounds → accept int and float; Decimal bounds → accept int/Decimal).
+         - ``CoerceToType`` coerces the candidate into the type of ``low_value``.
+
+      2. **Custom strategies** (from ``get_custom_strategies()``):
+         - A hook for subclasses to inject additional transformations or validations.
+         - Default implementation returns an empty list.
+         - Example: converting Fahrenheit to Celsius before applying the range.
+
+      3. **Range strategies** (``_range_strategies``):
+         - ``RangeValidationStrategy`` enforces ``low_value <= value <= high_value``.
+
+    Extension
+    ---------
+    To customize behavior, subclass and override ``get_custom_strategies()`
+
+    Notes
+    -----
+    - Canonical values are always coerced to the type of ``low_value``.
+    - If you pass bounds as floats, both int and float inputs are accepted
+      and coerced to float.
+    - If you pass bounds as Decimals, both int and Decimal inputs are accepted
+      and coerced to Decimal.
+    """
+    __slots__ = ("_type_strategies","_range_strategies")
 
     @classmethod
     def infer_valid_types_from_value(cls, value) -> Tuple[Type, ...]:
@@ -136,18 +169,22 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
         return (t,)
 
     def get_strategies(self) -> List[PipeLineStrategy]:
-        return self._strategies
+        return self._type_strategies + self.get_custom_strategies() + self._range_strategies
+
+    def get_custom_strategies(self) -> list[PipeLineStrategy]:
+        return []
 
     def __init__(self, value, low_value, high_value, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         # Initialize the strategies for this subclass
-        object.__setattr__(self, "_strategies", [
+        object.__setattr__(self, "_type_strategies", [
             SameTypeValidationStrategy(low_value, high_value),
             TypeValidationStrategy(ConstrainedRangeValue.infer_valid_types_from_value(low_value)),
-            CoerceToType(type(low_value)),
+            CoerceToType(type(low_value))
+        ])
+        object.__setattr__(self, "_range_strategies", [
             RangeValidationStrategy(low_value, high_value)
         ])
         super().__init__(value, success_details)
-
 
 """
    StrictConstrainedValue Notes

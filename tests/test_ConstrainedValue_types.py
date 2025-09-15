@@ -5,11 +5,11 @@ from fractions import Fraction
 
 from constrained_values import Response
 from constrained_values.status import Status
-from constrained_values.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictConstrainedValue
+from constrained_values.constrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictConstrainedValue
 from constrained_values.strategies import FailValidationStrategy
 from constrained_values.value import TransformationStrategy
 
-
+# noinspection DuplicatedCode
 class TestRangeValidatedValue(unittest.TestCase):
     def test_range_validated_value(self):
         range_val = ConstrainedRangeValue(15, 10, 20)
@@ -281,13 +281,11 @@ class TestConstrainedEnumValueNoThrows(unittest.TestCase):
 
 class TestConstrainedEnumValuePlainValues(unittest.TestCase):
     def test_plain_values_accepts_allowed_value(self):
-        # valid_values is a plain sequence (no Enum): should accept matching values directly
         cv = ConstrainedEnumValue("a", ["a", "b"])
         self.assertEqual(cv.status, Status.OK)
         self.assertEqual(cv.value, "a")
 
     def test_plain_values_rejects_wrong_type(self):
-        # Exact runtime type check should fail: ints not accepted when allowed are strings
         cv = ConstrainedEnumValue(42, ["a", "b"])
         self.assertEqual(cv.status, Status.EXCEPTION)
 
@@ -322,6 +320,7 @@ class TestStrictValidatedValue(unittest.TestCase):
         self.assertIn("Failed Constraints for value - '123'", msg)
         self.assertIn("boom", msg)
 
+    # noinspection DuplicatedCode
     def test_transform_then_fail_still_raises(self):
         class Inc(TransformationStrategy[int, int]):
             def transform(self, value: int) -> Response[int]:
@@ -336,6 +335,7 @@ class TestStrictValidatedValue(unittest.TestCase):
 
         self.assertIn("blocked", str(ctx.exception))
 
+# noinspection DuplicatedCode
 class TestConstrainedRangeValueInferValidTypes(unittest.TestCase):
     def test_int_returns_int_only(self):
         self.assertEqual(
@@ -374,3 +374,47 @@ class TestConstrainedRangeValueInferValidTypes(unittest.TestCase):
             ConstrainedRangeValue.infer_valid_types_from_value(Widget()),
             (Widget,),
         )
+
+
+class AddOneTransform(TransformationStrategy[int, int]):
+    """Toy strategy that always increments the value by 1."""
+    def transform(self, value: int) -> Response[int]:
+        return Response(Status.OK, "added one", value + 1)
+
+
+class AlwaysFailTransform(TransformationStrategy[int, int]):
+    """Toy strategy that always fails."""
+    def transform(self, value: int) -> Response[int]:
+        return Response(Status.EXCEPTION, "forced failure", None)
+
+
+class CustomRangeValue(ConstrainedRangeValue[int]):
+    """Subclass that inserts AddOneTransform in the pipeline."""
+    def __init__(self, value: int, low: int, high: int):
+        super().__init__(value, low, high)
+
+    def get_custom_strategies(self):
+        return [AddOneTransform()]
+
+
+class FailingCustomRangeValue(ConstrainedRangeValue[int]):
+    """Subclass that always fails during custom stage."""
+    def __init__(self, value: int, low: int, high: int):
+        super().__init__(value, low, high)
+
+    def get_custom_strategies(self):
+        return [AlwaysFailTransform()]
+
+
+class TestConstrainedRangeValueCustomStrategies(unittest.TestCase):
+    def test_custom_strategy_runs_before_range(self):
+        # Base value 4 is incremented to 5, which is inside 0..10
+        cv = CustomRangeValue(4, 0, 10)
+        self.assertEqual(cv.status, Status.OK)
+        self.assertEqual(cv.value, 5)
+
+    def test_custom_strategy_can_force_failure(self):
+        cv = FailingCustomRangeValue(4, 0, 10)
+        self.assertEqual(cv.status, Status.EXCEPTION)
+        self.assertIsNone(cv.value)
+        self.assertIn("forced failure", cv.details)

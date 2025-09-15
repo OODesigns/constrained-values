@@ -1,7 +1,5 @@
 """
-Level 1: Simple Range Validation
-
-The most basic use case is ensuring a value falls within a specific range. 
+The most basic use case is ensuring a value falls within a specific range.
 Instead of passing an integer around and checking its bounds everywhere, 
 we create an `Age` type by defining a class.
 """
@@ -21,6 +19,8 @@ def main():
     # Now, let's use our new Age type.
     valid_age = Age(30)
     invalid_age = Age(150)
+    invalid_age_by_type = Age("21")
+    another_age = Age(32)
 
     print(f"Valid age: {valid_age.value}, Is OK: {valid_age.ok}")
     # Output: Valid age: 30, Is OK: True
@@ -30,6 +30,13 @@ def main():
 
     print(f"Error details: {invalid_age.details}")
     # Output: Value must be less than or equal to 120, got 150
+
+    print(f"Error details: {invalid_age_by_type.details}")
+    # Output: Error details: Value must be one of 'int', got 'str'
+
+    print(f"another_age: {another_age.value}, is greater than valid age: {valid_age.value} ? {another_age > valid_age}")
+    #Output: another_age: 32, is greater than valid age: 30 ? True
+
 
 
 if __name__ == "__main__":
