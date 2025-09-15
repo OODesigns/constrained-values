@@ -2,9 +2,11 @@
 Example 26 — URL value
 Transform string into a parsed URL and validate scheme/host.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
 from urllib.parse import urlparse, ParseResult
-
 from constrained_values import Response, Status, TypeValidationStrategy
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
 

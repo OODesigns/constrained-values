@@ -2,11 +2,12 @@
 Example 09 — Chained transforms
 Running multiple transformation steps before final validation.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
-
 from constrained_values import Response, Status, RangeValidationStrategy
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
-
 
 class Inc(TransformationStrategy[int, int]):
     def transform(self, value: int) -> Response[int]:

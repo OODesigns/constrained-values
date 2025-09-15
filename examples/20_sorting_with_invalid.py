@@ -2,11 +2,12 @@
 Example 20 — Sorting with invalid present
 Attempting to sort a list containing an invalid ConstrainedValue raises ValueError.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import Any, List
-
 from constrained_values import Response, Status
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
-
 
 class Pass(TransformationStrategy[Any, Any]):
     def transform(self, value: Any) -> Response[Any]: return Response(status=Status.OK, details="ok", value=value)

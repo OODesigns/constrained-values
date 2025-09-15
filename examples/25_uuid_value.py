@@ -2,12 +2,13 @@
 Example 25 — UUID parsing
 Transform a string into uuid.UUID and validate version.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import uuid
 from typing import List
-
 from constrained_values import Response, Status, TypeValidationStrategy
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
-
 
 class ToUUID(TransformationStrategy[str, uuid.UUID]):
     def transform(self, value: str) -> Response[uuid.UUID]:

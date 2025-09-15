@@ -2,8 +2,10 @@
 Example 14 — ConstrainedEnumValue (sequence of enum members)
 Supply members directly; input may be member or underlying.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
-
 from constrained_values import ConstrainedEnumValue
 
 

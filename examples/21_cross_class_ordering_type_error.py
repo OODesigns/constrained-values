@@ -2,11 +2,12 @@
 Example 21 — Cross-class ordering TypeError
 Ordering across different ConstrainedValue subclasses returns NotImplemented → TypeError.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
-
 from constrained_values import Response, Status
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
-
 
 class Pass(TransformationStrategy[int, int]):
     def transform(self, value: int) -> Response[int]: return Response(status=Status.OK, details="ok", value=value)

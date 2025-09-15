@@ -8,6 +8,7 @@ Core value and validation abstractions.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from types import NotImplementedType
 from typing import Generic, List, Optional, Callable, Union, TypeVar, Any
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, StatusResponse
@@ -41,7 +42,7 @@ class Value(Generic[T]):
         """Returns the stored value."""
         return self._value
 
-    def _compare(self, other: "Value[T]", comparison_func: Callable[[T, T], bool]) -> Union[bool, NotImplemented]:
+    def _compare(self, other: "Value[T]", comparison_func: Callable[[T, T], bool]) -> bool | NotImplementedType:
         if self._class_is_same(other):
             return comparison_func(self.value, other.value)
         return NotImplemented
@@ -116,7 +117,7 @@ class ConstrainedValue(Value[T], ABC):
       - Ordering comparisons raise if either side is invalid.
 
     Truthiness:
-      - bool(x) is True iff status == Status.OK (see .ok).
+      - bool(x) is True if status == Status.OK (see .ok).
 
     Hashing:
       - Valid instances hash by (class, value); invalid instances hash by (class, status).
@@ -198,7 +199,7 @@ class ConstrainedValue(Value[T], ABC):
         return super().__eq__(other)
 
     def _is_comparing(self, other: "ConstrainedValue[T]",
-                      func: Callable[["Value[T]"], Union[bool, NotImplemented]]):
+                      func: Callable[["Value[T]"], bool | NotImplementedType]):
         """
         Internal helper for ordering comparisons:
         - Ensures same concrete class

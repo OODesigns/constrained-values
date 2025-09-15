@@ -2,6 +2,9 @@
 Example 03 — Minimal ConstrainedValue
 A ConstrainedValue that simply passes the value through.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import Any, List
 
 from constrained_values import Response, Status

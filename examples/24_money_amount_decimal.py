@@ -2,13 +2,14 @@
 Example 24 — Money amount parsing
 Parse '€12.34' or 'USD 12.34' into (currency, Decimal) using transforms.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 from typing import List
-
 from constrained_values import Response, Status, TypeValidationStrategy
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
-
 
 class Currency(Enum):
     USD = "USD"

@@ -2,6 +2,7 @@
 Example 13 — ConstrainedEnumValue (Enum class input)
 Accept both enum members and their underlying values.
 """
+
 from enum import Enum
 
 from constrained_values import ConstrainedEnumValue

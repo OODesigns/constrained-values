@@ -2,11 +2,13 @@
 Example 23 — App config validation (dict)
 Validate a config dict (port range, log level enum, feature flag) using ConstrainedRangeValue and ConstrainedEnumValue.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
 from typing import Dict, Tuple, Any
 
 from constrained_values import ConstrainedRangeValue, Status, ConstrainedEnumValue
-
 
 class LogLevel(Enum):
     DEBUG = "debug"

@@ -2,6 +2,9 @@
 Example 04 — Failing ConstrainedValue
 A ConstrainedValue that fails in its pipeline and exposes status/details.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import Any, List
 
 from constrained_values import Response, Status

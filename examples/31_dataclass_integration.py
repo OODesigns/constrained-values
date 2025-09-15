@@ -2,12 +2,13 @@
 Example 31 — Dataclass wrapping ConstrainedValues
 Build a dataclass-like config that aggregates ConstrainedValue fields and reports errors.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-
 from constrained_values import ConstrainedEnumValue, ConstrainedRangeValue
-
 
 class Color(Enum):
     RED = "red"

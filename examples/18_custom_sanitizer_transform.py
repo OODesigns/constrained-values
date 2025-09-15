@@ -2,8 +2,10 @@
 Example 18 — Custom sanitizer transform
 Trim/lower a string before validation.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
-
 from constrained_values import Response, Status, TypeValidationStrategy, EnumValidationStrategy
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
 

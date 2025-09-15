@@ -2,11 +2,12 @@
 Example 08 — Hashing policy
 Valid instances hash by (class, value); invalid by (class, status).
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import Any
-
 from constrained_values import Response, Status
 from constrained_values.value import TransformationStrategy, ConstrainedValue
-
 
 class Pass(TransformationStrategy[Any, Any]):
     def transform(self, value: Any) -> Response[Any]: return Response(status=Status.OK, details="ok", value=value)

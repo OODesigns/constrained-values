@@ -2,11 +2,12 @@
 Example 12 — ConstrainedRangeValue with coercion
 int coerced to float/Decimal/Fraction based on bound type.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from decimal import Decimal
 from fractions import Fraction
-
 from constrained_values import ConstrainedRangeValue
-
 
 def main():
     print("int->float:", ConstrainedRangeValue(3, 0.0, 10.0).value)

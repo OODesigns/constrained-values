@@ -2,8 +2,10 @@
 Example 19 — StrictValidatedValue
 Strict variant raises ValueError if pipeline fails.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
-
 from constrained_values import StrictValidatedValue
 from constrained_values.strategies import FailValidationStrategy
 

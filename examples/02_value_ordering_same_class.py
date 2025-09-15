@@ -2,8 +2,10 @@
 Example 02 — Value ordering in the same class
 Ordering only compares same concrete Value class; reflected fallback not used.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from constrained_values import Value
-
 class BreakLtSame(Value[int]):
     def __init__(self, v: int): super().__init__(v)
     def __lt__(self, other):  # pragma: no cover (sentinel)

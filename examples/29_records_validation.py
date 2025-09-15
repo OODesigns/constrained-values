@@ -2,11 +2,12 @@
 Example 29 — Record list validation
 Validate a list of small records where each field uses a ConstrainedValue.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
 from typing import List, Dict, Any
-
 from constrained_values import ConstrainedRangeValue, ConstrainedEnumValue
-
 
 class Role(Enum):
     USER = "user"

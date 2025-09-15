@@ -2,9 +2,11 @@
 Example 28 — Date parsing and range
 Parse multiple formats into date and validate in range.
 """
+import sys, pathlib
+# Make repo root importable when running this file directly
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from datetime import date, datetime
 from typing import List
-
 from constrained_values import Response, Status, TypeValidationStrategy, ConstrainedRangeValue
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
 
