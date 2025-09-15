@@ -82,9 +82,9 @@ class RawToCelsius(TransformationStrategy[int, float]):
 
 class VentilationTemperature(ConstrainedRangeValue[float]):
     """
-    Valid Celsius value between -10 and 40, inclusive.
-    Accepts input as Fahrenheit (int/float).
-    Fahrenheit is converted internally to Celsius before validation.
+    This value object encapsulates the full pipeline of reading and validating
+    temperature data from Modbus input registers, converting to Celsius, and
+    enforcing an allowed range.
     """
     __slots__ = ("_getValueFromRegister",)
 
