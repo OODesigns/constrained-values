@@ -12,7 +12,7 @@ In many applications, especially when interacting with hardware or external syst
 
 The **Constrained Values** library solves this by embracing Object-Oriented principles. Instead of passing around a raw `int`, you create a rich, meaningful `Age` or `Temperature` object. This object encapsulates not just the value, but also the rules that govern it, ensuring that it can never exist in an invalid state.
 
-This is particularly powerful for abstracting hardware domains. Instead of remembering that a [Modbus](https://www.modbus.org/) register value of `-32768` on a specific hardware means "no sensor detected," or that a valid Serial Peripheral Interface ([SPI](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Original_definition)) "mode" is an integer between 0 and 3, you can create type-safe objects like `BlaubergTemperature` or `SPIMode` that handle this complexity internally.
+This is particularly powerful for abstracting hardware domains. Instead of remembering that a [Modbus](https://www.modbus.org/) register value of `-32768` on a specific hardware means "no sensor detected," or that a valid Serial Peripheral Interface ([SPI](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Original_definition)) "mode" is an integer between 0 and 3, you can create type-safe objects like `VentilationTemperature` or `SPIMode` that handle this complexity internally.
 
 ## Features
 
@@ -181,7 +181,7 @@ class RawToCelsius(TransformationStrategy[int, float]):
         return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=celsius)
 
 
-class VentilationTemperatureValue(ConstrainedRangeValue[float]):
+class VentilationTemperature(ConstrainedRangeValue[float]):
     """
     Valid Celsius value between -10 and 40, inclusive.
     Accepts input as Fahrenheit (int/float).
@@ -205,22 +205,22 @@ class VentilationTemperatureValue(ConstrainedRangeValue[float]):
     registers = [215, -32768, 32767, 402]  # Example Modbus register values
 
     print("=== Valid register 0 ===")
-    v = VentilationTemperatureValue(registers, 0)
+    v = VentilationTemperature(registers, 0)
     print(f"status={v.status}, details={v.details}, value={v.value}")  # → 21.5°C
     # Output # status=Status.OK, details=validation successful, value=21.5
 
     print("\n=== Invalid: No sensor detected (register 1) ===")
-    v = VentilationTemperatureValue(registers, 1)
+    v = VentilationTemperature(registers, 1)
     print(f"status={v.status}, details={v.details}")
     # Output # status=Status.EXCEPTION, details=No sensor detected
 
     print("\n=== Invalid: Sensor short circuit (register 2) ===")
-    v = VentilationTemperatureValue(registers, 2)
+    v = VentilationTemperature(registers, 2)
     print(f"status={v.status}, details={v.details}")
     # Output # status=Status.EXCEPTION, details=Sensor short circuit
 
     print("\n=== Out of range (register 3) ===")
-    v = VentilationTemperatureValue(registers, 3)
+    v = VentilationTemperature(registers, 3)
     print(f"status={v.status}, details={v.details}")
     # Output # status=Status.EXCEPTION, details=Value must be less than or equal to 40.0, got 40.2
 ```

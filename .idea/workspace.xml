@@ -4,19 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd3bbb1f-1019-40ca-9a41-a46b66651475" name="Changes" comment="UPDATE: Adding readme + more details">
-      <change afterPath="$PROJECT_DIR$/.idea/sonarlint.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/readme_example_2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/readme_example_3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/constrained_values/ConstrainedValue_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/constrained_values/constrainedValue_types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/constrained_values/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/constrained_values/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/readme_level_1.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/readme_example_1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_ConstrainedValue_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_ConstrainedValue_types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_strategies.py" afterDir="false" />
-    </list>
+    <list default="true" id="fd3bbb1f-1019-40ca-9a41-a46b66651475" name="Changes" comment="UPDATE: Adding readme + more details" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -302,7 +290,7 @@
       <recent name="$PROJECT_DIR$/.idea" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests for tests.test_ConstrainedValue_types.TestConstrainedRangeValueCustomStrategies.test_custom_strategy_can_force_failure">
+  <component name="RunManager" selected="Python.readme_example_3">
     <configuration name="constrainedValue_types" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="constrained-values" />
       <option name="ENV_FILES" value="" />
@@ -406,8 +394,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Python tests for tests.test_ConstrainedValue_types.TestConstrainedRangeValueCustomStrategies.test_custom_strategy_can_force_failure" />
         <item itemvalue="Python.readme_example_3" />
+        <item itemvalue="Python tests.Python tests for tests.test_ConstrainedValue_types.TestConstrainedRangeValueCustomStrategies.test_custom_strategy_can_force_failure" />
         <item itemvalue="Python tests.Python tests in test_ConstrainedValue_types.py" />
         <item itemvalue="Python tests.Python tests for tests.test_ConstrainedValue_types.TestRangeValidatedValue.test_range_validated_value" />
         <item itemvalue="Python.constrainedValue_types" />
@@ -444,6 +432,7 @@
       <workItem from="1757919420682" duration="1336000" />
       <workItem from="1757921704668" duration="286000" />
       <workItem from="1757924995684" duration="12978000" />
+      <workItem from="1757945717114" duration="319000" />
     </task>
     <task id="LOCAL-00001" summary="FIX: created more test to cover more">
       <option name="closed" value="true" />
@@ -629,7 +618,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757926137507</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="UPDATE: Adding readme + more details">
+      <option name="closed" value="true" />
+      <created>1757945726834</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1757945726835</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
