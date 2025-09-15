@@ -5,7 +5,7 @@ from fractions import Fraction
 
 from constrained_values import Response
 from constrained_values.status import Status
-from constrained_values.constrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictConstrainedValue
+from constrained_values.constrained_value_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictConstrainedValue
 from constrained_values.strategies import FailValidationStrategy
 from constrained_values.value import TransformationStrategy
 
