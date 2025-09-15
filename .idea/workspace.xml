@@ -4,42 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd3bbb1f-1019-40ca-9a41-a46b66651475" name="Changes" comment="UPDATE: updated name">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/01_value_equality_and_hash.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/01_value_equality_and_hash.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/02_value_ordering_same_class.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/02_value_ordering_same_class.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/03_constrained_pass_through.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/03_constrained_pass_through.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/04_constrained_failure.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/04_constrained_failure.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/05_truthiness_and_ok.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/05_truthiness_and_ok.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/06_unwrap_usage.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/06_unwrap_usage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/07_str_and_format.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/07_str_and_format.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/08_hashing_valid_vs_invalid.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/08_hashing_valid_vs_invalid.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/09_chained_transforms.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/09_chained_transforms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/10_type_validation_strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/10_type_validation_strategy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/11_same_type_validation_strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/11_same_type_validation_strategy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/12_range_with_coercion.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/12_range_with_coercion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/13_enum_with_class.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/13_enum_with_class.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/14_enum_with_members_sequence.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/14_enum_with_members_sequence.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/15_enum_with_plain_values.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/15_enum_with_plain_values.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/16_enum_config_errors_no_throw.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/16_enum_config_errors_no_throw.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/17_coerce_to_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/17_coerce_to_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/18_custom_sanitizer_transform.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/18_custom_sanitizer_transform.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/19_strict_validated_value.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/19_strict_validated_value.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/20_sorting_with_invalid.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/20_sorting_with_invalid.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/21_cross_class_ordering_type_error.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/21_cross_class_ordering_type_error.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/22_unknown_strategy_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/22_unknown_strategy_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/23_config_validation.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/23_config_validation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/24_money_amount_decimal.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/24_money_amount_decimal.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/25_uuid_value.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/25_uuid_value.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/26_url_value.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/26_url_value.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/27_email_value.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/27_email_value.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/28_date_parsing.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/28_date_parsing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/29_records_validation.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/29_records_validation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/30_pipeline_logging.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/30_pipeline_logging.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/31_dataclass_integration.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/31_dataclass_integration.py" afterDir="false" />
-    </list>
+    <list default="true" id="fd3bbb1f-1019-40ca-9a41-a46b66651475" name="Changes" comment="UPDATE: updated gitignore" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -478,6 +443,7 @@
       <workItem from="1757918397912" duration="121000" />
       <workItem from="1757918543197" duration="390000" />
       <workItem from="1757919420682" duration="1336000" />
+      <workItem from="1757921704668" duration="286000" />
     </task>
     <task id="LOCAL-00001" summary="FIX: created more test to cover more">
       <option name="closed" value="true" />
@@ -647,7 +613,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757918803122</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="UPDATE: updated gitignore">
+      <option name="closed" value="true" />
+      <created>1757921760075</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1757921760075</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -673,7 +647,8 @@
     <MESSAGE value="UPDATE: ConstrainedEnumValue so it is more in line with the ConstrainedRangeValue + added more test and got coverage 100% which helped to clean things up" />
     <MESSAGE value="UPDATE: Added Examples" />
     <MESSAGE value="UPDATE: updated name" />
-    <option name="LAST_COMMIT_MESSAGE" value="UPDATE: updated name" />
+    <MESSAGE value="UPDATE: updated gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="UPDATE: updated gitignore" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
