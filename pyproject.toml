@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "constrained-values"
+# Version comes from constrained_values.__version__
+dynamic = ["version"]
+description = "A Python library for creating type-safe, self-validating value objects using powerful transformation and validation pipelines."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Michael Lindre", email = "cvl@oodesigns.com" }
+]
+keywords = ["validation", "value-object", "constraints", "types", "enum", "range"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+# Automatically find your src/ or package layout
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["constrained_values*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "constrained_values.__version__" }
+
+[project.urls]
+Homepage = "https://github.com/OODesigns/constrained-values"
+Issues = "https://github.com/OODesigns/constrained-values/issues"

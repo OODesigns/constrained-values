@@ -1,0 +1,15 @@
+# Docs and metadata
+include README.md
+include LICENSE
+include pyproject.toml
+
+# Package source
+recursive-include constrained_values *.py
+recursive-include tests *.py
+
+# Exclude demo/readme/example scripts
+exclude readme_example_*.py
+exclude examples/*
+
+global-exclude *.pyc
+global-exclude __pycache__

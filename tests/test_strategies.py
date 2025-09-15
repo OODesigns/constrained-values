@@ -5,7 +5,7 @@ from typing import List
 
 from constrained_values.constants import DEFAULT_SUCCESS_MESSAGE
 from constrained_values.status import Status
-from constrained_values.constrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue
+from constrained_values.constrained_value_types import ConstrainedEnumValue, ConstrainedRangeValue
 from constrained_values.strategies import (
     RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
     CoerceToType, FailValidationStrategy,
