@@ -20,7 +20,6 @@ from .strategies import (
 
 T = TypeVar("T")
 
-
 def _iter_unique_types(values: Sequence[Any]) -> Iterator[type]:
     """Yield runtime types of values, de-duplicated in first-seen order."""
     seen: set[type] = set()
@@ -151,7 +150,7 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
 
 
 """
-   StrictValidatedValue Notes
+   StrictConstrainedValue Notes
 
    Python MRO (Method Resolution Order): 
    In Python, when a class inherits from multiple classes, 
@@ -159,27 +158,27 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
    method to call. Essentially, it searches through each base class in the specified order until it finds 
    the method being called.
    
-   Usage in StrictValidatedValue
+   Usage in StrictConstrainedValue
    
-   class StrictMyClass(MyClass, StrictValidatedValue):
+   class StrictMyClass(MyClass, StrictConstrainedValue):
    
    the MRO now starts with MyClass for the __init__() method:
     
    MyClass.__init__() is called first, which is designed to handle the argument (value) as expected.
-   After MyClass is initialized, the MRO moves to StrictValidatedValue. 
+   After MyClass is initialized, the MRO moves to StrictConstrainedValue. 
     
-   The strict behavior in StrictValidatedValue can then be applied after the basic validation has already happened.
+   The strict behavior in StrictConstrainedValue can then be applied after the basic validation has already happened.
 
-   In essence, MyClass handles the initial validation logic, and StrictValidatedValue adds the additional strict behavior (e.g., raising an exception).
+   In essence, MyClass handles the initial validation logic, and StrictConstrainedValue adds the additional strict behavior (e.g., raising an exception).
    
 """
 
 
-class StrictValidatedValue(ConstrainedValue[T], ABC):
+class StrictConstrainedValue(ConstrainedValue[T], ABC):
     """
-    A stricter version of ValidatedValue that raises an exception immediately if the validation fails.
+    A stricter version of ConstrainedValue that raises an exception immediately if the validation fails.
     """
     def __init__(self, value: T = None, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         super().__init__(value, success_details)
         if self.status == Status.EXCEPTION:
-            raise ValueError(f"Validation failed for value '{value}': {self.details}")
+            raise ValueError(f"Failed Constraints for value - '{value}': {self.details}")

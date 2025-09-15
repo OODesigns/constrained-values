@@ -14,7 +14,7 @@ from .value import (
 from .ConstrainedValue_types import (
     ConstrainedEnumValue,
     ConstrainedRangeValue,
-    StrictValidatedValue
+    StrictConstrainedValue
 )
 from .strategies import (
     TypeValidationStrategy,
@@ -37,6 +37,6 @@ __all__ = [
     "ConstrainedValue",
     "ConstrainedEnumValue",
     "ConstrainedRangeValue",
-    "StrictValidatedValue",
+    "StrictConstrainedValue",
 ]
 

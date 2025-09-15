@@ -5,7 +5,7 @@ from fractions import Fraction
 
 from constrained_values import Response
 from constrained_values.status import Status
-from constrained_values.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictValidatedValue
+from constrained_values.ConstrainedValue_types import ConstrainedEnumValue, ConstrainedRangeValue, StrictConstrainedValue
 from constrained_values.strategies import FailValidationStrategy
 from constrained_values.value import TransformationStrategy
 
@@ -302,7 +302,7 @@ class TestConstrainedEnumValuePlainValues(unittest.TestCase):
 
 class TestStrictValidatedValue(unittest.TestCase):
     def test_success_does_not_raise(self):
-        class AlwaysOK(StrictValidatedValue[int]):
+        class AlwaysOK(StrictConstrainedValue[int]):
             def get_strategies(self):
                 return []  # no steps -> OK
 
@@ -311,7 +311,7 @@ class TestStrictValidatedValue(unittest.TestCase):
         self.assertEqual(x.value, 42)
 
     def test_failure_raises_value_error_with_details(self):
-        class AlwaysFail(StrictValidatedValue[int]):
+        class AlwaysFail(StrictConstrainedValue[int]):
             def get_strategies(self):
                 return [FailValidationStrategy("boom")]
 
@@ -319,7 +319,7 @@ class TestStrictValidatedValue(unittest.TestCase):
             AlwaysFail(123)
 
         msg = str(ctx.exception)
-        self.assertIn("Validation failed for value '123'", msg)
+        self.assertIn("Failed Constraints for value - '123'", msg)
         self.assertIn("boom", msg)
 
     def test_transform_then_fail_still_raises(self):
@@ -327,7 +327,7 @@ class TestStrictValidatedValue(unittest.TestCase):
             def transform(self, value: int) -> Response[int]:
                 return Response(status=Status.OK, details="inc", value=value + 1)
 
-        class TransformThenFail(StrictValidatedValue[int]):
+        class TransformThenFail(StrictConstrainedValue[int]):
             def get_strategies(self):
                 return [Inc(), FailValidationStrategy("blocked")]
 

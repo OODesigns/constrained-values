@@ -21,6 +21,7 @@ This is particularly powerful for abstracting hardware domains. Instead of remem
 -   **Built-in Strategies:** Includes common validators for ranges, enums, types, and more.
 -   **Custom Logic:** Easily extend the library with your own validation and transformation strategies.
 -   **Clear Error Handling:** Each constrained value clearly reports its status (`OK` or `EXCEPTION`) and provides descriptive error messages.
+-   **Optional Error Throw:** When constructing a constrained value you can make it throw immediately, so you know an object is valid.    
 -   **Type Safety:** Enforces the final, canonical type of your value.
 
 ## Installation
@@ -44,9 +45,9 @@ from constrained_values import ConstrainedValue
 from constrained_values.strategies import Range, PipeLineStrategy
 
 # Define an 'Age' type that must be an integer between 0 and 120.
-class Age(ConstrainedValue[int]):
-    def get_strategies(self) -> List[PipeLineStrategy]:
-        return [Range(1, 120)]
+class Age(ConstrainedRangeValue[int]):
+    def __init__(self, value):
+        super().__init__(value, 0, 120)
 
 # Now, let's use our new Age type.
 valid_age = Age(30)
@@ -59,7 +60,8 @@ print(f"Invalid age: {invalid_age.value}, Is OK: {invalid_age.ok}")
 # Output: Invalid age: None, Is OK: False
 
 print(f"Error details: {invalid_age.details}")
-# Output: Error details: 150 is not within the range 0-120
+# Output: Value must be less than or equal to 120, got 150
+
 ```
 
 We can do the same for a `Temperature` object.

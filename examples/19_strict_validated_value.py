@@ -6,14 +6,14 @@ import sys, pathlib
 # Make repo root importable when running this file directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from typing import List
-from constrained_values import StrictValidatedValue
+from constrained_values import StrictConstrainedValue
 from constrained_values.strategies import FailValidationStrategy
 
 
-class AlwaysOK(StrictValidatedValue[int]):
+class AlwaysOK(StrictConstrainedValue[int]):
     def get_strategies(self) -> List: return []
 
-class AlwaysFail(StrictValidatedValue[int]):
+class AlwaysFail(StrictConstrainedValue[int]):
     def get_strategies(self) -> List: return [FailValidationStrategy("boom")]
 
 def main():
