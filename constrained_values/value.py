@@ -9,7 +9,7 @@ Core value and validation abstractions.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from types import NotImplementedType
-from typing import Generic, List, Optional, Callable, Union, TypeVar, Any
+from typing import Generic, List, Optional, Callable, TypeVar, Any
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .response import Response, StatusResponse
 from .status import Status
