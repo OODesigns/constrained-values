@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "constrained-values"
 # Version comes from constrained_values.__version__
 dynamic = ["version"]
-description = "A Python library for creating type-safe, self-validating value objects using powerful transformation and validation pipelines."
+description = "A Python library for creating type-safe, self-validating value objects using a powerful transformation and validation pipeline."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
