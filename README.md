@@ -129,7 +129,7 @@ The process involves multiple steps:
 4.  The hardware uses special values (`-32768`, `32767`) to signal errors like a missing or short-circuited sensor. We must detect these.
 5.  If the value is valid, it's not yet in Celsius. We need to divide it by `10.0` to get the final temperature.
 
-Here’s how you can model this entire chain of validation and transformation using a custom `ConstrainedValue`.
+Here’s how you can model this entire chain of validation and transformation using a custom `ConstrainedRangeValue`.
 
 ```python
 from typing import List
