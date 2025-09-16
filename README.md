@@ -1,6 +1,6 @@
 # Constrained Values
 
-A Python library for creating type-safe, self-validating value objects using powerful transformation and validation pipelines.
+A Python library for creating type-safe, self-validating value objects using a powerful transformation and validation pipeline.
 
 ## The Philosophy: Beyond Primitive Types
 
