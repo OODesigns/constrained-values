@@ -132,6 +132,7 @@ The process involves multiple steps:
 Here’s how you can model this entire chain of validation and transformation using a custom `ConstrainedRangeValue`.
 
 ```python
+# See: examples/readme_example_3.py
 from typing import List
 from constrained_values import (Response, Status, ConstrainedRangeValue,
                                 ValidationStrategy, TypeValidationStrategy, DEFAULT_SUCCESS_MESSAGE)
