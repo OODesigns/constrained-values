@@ -21,7 +21,14 @@ from .strategies import (
 T = TypeVar("T")
 
 def _iter_unique_types(values: Sequence[Any]) -> Iterator[type]:
-    """Yield runtime types of values, de-duplicated in first-seen order."""
+    """Yield unique runtime types of values in first-seen order.
+
+    Args:
+        values (Sequence[Any]): Sequence of values to infer types from.
+
+    Yields:
+        type: Unique types found in the input sequence.
+    """
     seen: set[type] = set()
     for v in values:
         t = type(v)
@@ -31,32 +38,51 @@ def _iter_unique_types(values: Sequence[Any]) -> Iterator[type]:
 
 
 def types_of_values(values: Sequence[Any]) -> tuple[type, ...]:
-    """
-    Infer unique runtime types from values using a generator, then normalize via get_types(...).
-    Kept as a tuple because get_types expects a concrete sequence (list/tuple).
+    """Infer unique runtime types from values and normalize via get_types.
+
+    Args:
+        values (Sequence[Any]): Sequence of values to infer types from.
+
+    Returns:
+        tuple[type, ...]: Tuple of unique types found in the input sequence.
     """
     return get_types(tuple(_iter_unique_types(values)))
 
 
 class CoerceEnumMemberToValue(TransformationStrategy[object, object]):
-    """If input is an Enum member, replace it with its .value; otherwise pass through."""
-
+    """Transformation strategy that replaces Enum members with their .value, otherwise passes through.
+    """
     def transform(self, value: object) -> Response[object]:
+        """Transform the input value: if it is an Enum member, return its .value; otherwise, return the value unchanged.
+
+        Args:
+            value (object): The value to transform.
+
+        Returns:
+            Response[object]: Response containing the transformed value.
+        """
         if isinstance(value, Enum):
             return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=value.value)
         return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=value)
 
 
 class ConstrainedEnumValue(ConstrainedValue[T]):
-    """
-    Validates enum-like values via a small pipeline:
-      CoerceEnumMemberToValue                   # only when Enum class or enum members supplied
-      TypeValidationStrategy(valid_types)       # exact runtime type(s) inferred from allowed values
-      EnumValidationStrategy(allowed_values)    # membership check
+    """Validates enum-like values using a pipeline of strategies.
 
-    NOTE: No constructor-time exceptions for config mistakes. If the configuration
-    is invalid (empty enum/sequence), we insert FailValidationStrategy so the
-    instance surfaces status=EXCEPTION with a clear details message.
+    Pipeline:
+        1. CoerceEnumMemberToValue: Converts Enum members to their values (if needed).
+        2. TypeValidationStrategy: Ensures value is of allowed types.
+        3. EnumValidationStrategy: Checks membership in allowed values.
+
+    If configuration is invalid (e.g., empty enum/sequence), FailValidationStrategy is used to surface an error.
+
+    Args:
+        value (object): The value to validate.
+        valid_values (Sequence[T] | Type[Enum]): Allowed values or Enum type.
+        success_details (str, optional): Details for successful validation. Defaults to DEFAULT_SUCCESS_MESSAGE.
+
+    Example:
+        >>> ConstrainedEnumValue('A', ['A', 'B', 'C'])
     """
     __slots__ = ("_strategies",)
 
@@ -66,8 +92,7 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
 
     @classmethod
     def _normalize_allowed(cls, valid_values: Sequence[Any] | Type[Enum]) -> tuple[list[Any], bool, str | None]:
-        """
-        Normalize 'valid_values' into:
+        """Normalize 'valid_values' into:
           - allowed_values: list of canonical values to check membership against
           - needs_coercion: whether to add the enum→value coercion step
           - error_details: None if OK; otherwise a message explaining an error
@@ -119,40 +144,32 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
 
 
 class ConstrainedRangeValue(ConstrainedValue[T]):
+    """Constrained numeric value bounded between low_value and high_value (inclusive).
+
+    Validation/transform pipeline:
+        1. Type strategies:
+            - SameTypeValidationStrategy: Ensures bounds are of the same type.
+            - TypeValidationStrategy: Infers acceptable input types from bounds.
+            - CoerceToType: Coerces candidate to type of low_value.
+        2. Custom strategies: Hook for subclasses to inject additional logic.
+        3. Range strategies:
+            - RangeValidationStrategy: Enforces low_value <= value <= high_value.
+
+    Args:
+        value (Any): The value to validate.
+        low_value (Any): Lower bound (inclusive).
+        high_value (Any): Upper bound (inclusive).
+        success_details (str, optional): Details for successful validation. Defaults to DEFAULT_SUCCESS_MESSAGE.
+
+    Example:
+        >>> ConstrainedRangeValue(5, 1, 10)
+
+    Notes:
+        - Canonical values are always coerced to the type of low_value.
+        - If bounds are floats, both int and float inputs are accepted and coerced to float.
+        - If bounds are Decimals, both int and Decimal inputs are accepted and coerced to Decimal.
     """
-    A constrained numeric value bounded between ``low_value`` and ``high_value`` (inclusive).
-
-    Pipeline structure
-    ------------------
-    The validation/transform pipeline is built in three parts:
-
-      1. **Type strategies** (``_type_strategies``):
-         - ``SameTypeValidationStrategy`` ensures the low/high bounds are of the same type.
-         - ``TypeValidationStrategy`` infers acceptable input types from the bounds
-           (e.g., float bounds → accept int and float; Decimal bounds → accept int/Decimal).
-         - ``CoerceToType`` coerces the candidate into the type of ``low_value``.
-
-      2. **Custom strategies** (from ``get_custom_strategies()``):
-         - A hook for subclasses to inject additional transformations or validations.
-         - Default implementation returns an empty list.
-         - Example: converting Fahrenheit to Celsius before applying the range.
-
-      3. **Range strategies** (``_range_strategies``):
-         - ``RangeValidationStrategy`` enforces ``low_value <= value <= high_value``.
-
-    Extension
-    ---------
-    To customize behavior, subclass and override ``get_custom_strategies()`
-
-    Notes
-    -----
-    - Canonical values are always coerced to the type of ``low_value``.
-    - If you pass bounds as floats, both int and float inputs are accepted
-      and coerced to float.
-    - If you pass bounds as Decimals, both int and Decimal inputs are accepted
-      and coerced to Decimal.
-    """
-    __slots__ = ("_type_strategies","_range_strategies")
+    __slots__ = ("_type_strategies", "_range_strategies")
 
     @classmethod
     def infer_valid_types_from_value(cls, value) -> Tuple[Type, ...]:
@@ -186,34 +203,17 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
         ])
         super().__init__(value, success_details)
 
-"""
-   StrictConstrainedValue Notes
-
-   Python MRO (Method Resolution Order): 
-   In Python, when a class inherits from multiple classes, 
-   it follows an inheritance order defined by the C3 Linearization algorithm to determine which base class's 
-   method to call. Essentially, it searches through each base class in the specified order until it finds 
-   the method being called.
-   
-   Usage in StrictConstrainedValue
-   
-   class StrictMyClass(MyClass, StrictConstrainedValue):
-   
-   the MRO now starts with MyClass for the __init__() method:
-    
-   MyClass.__init__() is called first, which is designed to handle the argument (value) as expected.
-   After MyClass is initialized, the MRO moves to StrictConstrainedValue. 
-    
-   The strict behavior in StrictConstrainedValue can then be applied after the basic validation has already happened.
-
-   In essence, MyClass handles the initial validation logic, and StrictConstrainedValue adds the additional strict behavior (e.g., raising an exception).
-   
-"""
 
 
 class StrictConstrainedValue(ConstrainedValue[T], ABC):
-    """
-    A stricter version of ConstrainedValue that raises an exception immediately if the validation fails.
+    """Stricter version of ConstrainedValue that raises an exception immediately if validation fails.
+
+    Args:
+        value (T, optional): The value to validate. Defaults to None.
+        success_details (str, optional): Details for successful validation. Defaults to DEFAULT_SUCCESS_MESSAGE.
+
+    Raises:
+        ValueError: If validation fails.
     """
     def __init__(self, value: T = None, success_details: str = DEFAULT_SUCCESS_MESSAGE):
         super().__init__(value, success_details)
