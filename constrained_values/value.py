@@ -1,11 +1,27 @@
-"""
-Core value and validation abstractions.
+"""Core value and validation abstractions.
 
-- Value[T]: typed wrapper providing equality and ordering between *same-class* values.
-- ValidationStrategy: pluggable unit that returns a StatusResponse (OK/EXCEPTION).
-- TransformationStrategy: pluggable unit that transforms and returns a Response[OutT].
-- ConstrainedValue: runs a sequence of strategies on a raw input (which may differ from the final T) before exposing .value/.status/.details.
+This module provides a small set of primitives for building typed, pipeline-driven
+value objects:
+
+- ``Value[T]``: An immutable, typed wrapper that defines equality and ordering
+  **only against the same concrete subclass**.
+- ``ValidationStrategy``: A pluggable check that returns a ``StatusResponse``
+  (``Status.OK`` or ``Status.EXCEPTION``) without changing the value.
+- ``TransformationStrategy``: A pluggable step that converts an input value to
+  a new value and returns a ``Response[OutT]`` (status, details, value).
+- ``ConstrainedValue[T]``: A value object that runs an input through a sequence
+  of strategies (transformations and validations) to produce a canonical ``T``,
+  plus status and details.
+
+Typical flow
+------------
+1) Start from a raw input (which may not be type ``T`` yet).
+2) Thread it through a pipeline: transformations may change the value/type,
+   validations only inspect it.
+3) On the first ``Status.EXCEPTION`` the pipeline short-circuits; otherwise,
+   the final value is accepted and exposed as the canonical ``T``.
 """
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from types import NotImplementedType
@@ -17,24 +33,33 @@ T = TypeVar("T")        # final canonical type
 
 @dataclass(frozen=True, slots=True)
 class Value(Generic[T]):
-    """
-    A base class to represent a generic immutable value.
+    """Immutable, typed value wrapper with same-class comparison semantics.
 
-    Immutability & memory:
-      - Implemented via dataclass(frozen=True) which prevents attribute mutation after __init__.
-      - slots=True avoids per-instance __dict__ and disallows arbitrary attributes.
+    A lightweight wrapper around a value of type ``T``. Instances compare for
+    equality and ordering **only** against the same concrete subclass; cross-class
+    comparisons return ``NotImplemented`` (so Python can try reversed ops).
 
-    Equality & ordering:
-      - Equality compares *same-class* values on the underlying data.
-      - Ordering is only defined between the same concrete class.
+    The dataclass is ``frozen=True`` for immutability and uses ``__slots__`` to
+    reduce memory footprint.
+
+    Type Variables:
+        T: The canonical type of the wrapped value.
+
+    Attributes:
+        _value (T): The wrapped value (read-only).
     """
+
     # Stored payload; immutable thanks to frozen dataclass
     _value: T
 
     def _class_is_same(self, other) -> bool:
+        """Return True if `other` is the same concrete subclass as `self`."""
         return other.__class__ is self.__class__
 
     def __repr__(self):
+        """Use !r to ensure the underlying value is shown with its repr() form
+        (developer-friendly and unambiguous, e.g., Value('foo') instead of Value(foo)).
+        """
         return f"{self.__class__.__name__}({self.value!r})"
 
     @property
@@ -42,7 +67,16 @@ class Value(Generic[T]):
         """Returns the stored value."""
         return self._value
 
-    def _compare(self, other: "Value[T]", comparison_func: Callable[[T, T], bool]) -> bool | NotImplementedType:
+    def _compare(self, other: Value[T], comparison_func: Callable[[T, T], bool]) -> bool | NotImplementedType:
+        """Compare values using the provided function if classes match.
+
+        Args:
+            other (Value[T]): The other value instance to compare.
+            comparison_func (Callable[[T, T], bool]): The comparator used when classes match.
+
+        Returns:
+            bool | NotImplementedType: Result of the comparison or NotImplemented for cross-class.
+        """
         if self._class_is_same(other):
             return comparison_func(self.value, other.value)
         return NotImplemented
@@ -81,52 +115,84 @@ MidT = TypeVar("MidT")  # intermediate type(s) in the pipeline
 OutT = TypeVar("OutT")  # output of a single transform step
 
 class PipeLineStrategy(ABC):
-    """Marker base for pipeline steps (either ValidationStrategy or TransformationStrategy)."""
+    """Abstract base for pipeline processing strategies.
+
+    Marker class for steps in a :class:`ConstrainedValue` pipeline. Concrete
+    subclasses implement either validation or transformation behaviour.
+    """
     pass
 
 class ValidationStrategy(Generic[MidT], PipeLineStrategy):
+    """Abstract base class for validation strategies.
+
+    Subclasses should implement :meth:`validate` to examine the provided value
+    and return a :class:`~constrained_values.response.StatusResponse` describing
+    whether the value is valid.
+
+    Type variables:
+        MidT: The type of value accepted by this validator.
+    """
+
     @abstractmethod
-    def validate(self, value: MidT) -> StatusResponse: # pragma: no cover
-        """Perform validation and return a StatusResponse."""
+    def validate(self, value: MidT) -> StatusResponse:  # pragma: no cover
+        """Validate ``value`` and return a StatusResponse.
+
+        Args:
+            value (MidT): Value to validate.
+
+        Returns:
+            StatusResponse: Validation outcome (status and details).
+        """
         pass
 
 class TransformationStrategy(Generic[InT, OutT], PipeLineStrategy):
+    """Abstract base class for transformation strategies.
+
+    Subclasses should implement :meth:`transform` to convert a value from
+    ``InT`` to ``OutT`` and return a :class:`~constrained_values.response.Response`.
+
+    Type variables:
+        InT: Input type accepted by this transformer.
+        OutT: Output type produced by this transformer.
+    """
+
     @abstractmethod
-    def transform(self, value: InT) -> Response[OutT]: # pragma: no cover
-        """Transform the value and return a Response[OutT]."""
+    def transform(self, value: InT) -> Response[OutT]:  # pragma: no cover
+        """Transform ``value`` and return a Response.
+
+        Args:
+            value (InT): Input value to transform.
+
+        Returns:
+            Response[OutT]: The transformed value with status and details.
+        """
         pass
 
 class ConstrainedValue(Value[T], ABC):
-    """
+    """A value that is validated/transformed by a processing pipeline.
 
-    A value processed by a pipeline of transformation and validation strategies.
+    A :class:`ConstrainedValue` accepts raw input (``InT``) and runs it through a
+    configured sequence of :class:`PipeLineStrategy` steps (transformations and
+    validations) to produce a canonical value of type ``T`` and a validation
+    status.
 
-    Each instance accepts a raw `value_in` (which may not yet be of the final type `T`)
-    and runs a series of strategies in order to produce a canonical value and status.
+    Type Variables:
+        T: The canonical (final) type after pipeline processing.
+        InT: The raw input type supplied to the constructor.
 
-    These strategies can either transform the value (e.g., sanitize, clean, or convert it into a canonical form)
-    or validate it against specific rules.
+    Private Attributes:
+        _status (Status): Current status (OK or EXCEPTION).
+        _details (str): Human-readable details about the validation / transformation result.
 
-    The outcome of the pipeline is represented as a Response, which contains:
-     - status: Status.OK if all strategies pass, else Status.EXCEPTION
-     - details: a human-readable message from the failing strategy
-     - value: the final, transformed and validated value, or None if the process fails.
-
-    Equality & ordering:
-      - Two instances are equal only if they are the same concrete class AND both are valid (Status.OK) AND their underlying values are equal.
-      - Ordering comparisons raise if either side is invalid.
-
-    Truthiness:
-      - bool(x) is True if status == Status.OK (see .ok).
-
-    Hashing:
-      - Valid instances hash by (class, value); invalid instances hash by (class, status).
-        This keeps invalids distinct from valid instances but may cluster many invalids in one bucket.
+    Properties:
+        value (Optional[T]): The canonical value if valid, else ``None``.
+        ok (bool): True when status is OK.
 
     Raises:
-      - ValueError: when calling unwrap() on an invalid instance (status != Status.OK).
-     """
+        ValueError: When calling :meth:`unwrap` on an invalid instance.
+    """
     def __repr__(self):
+        """Developer-friendly representation including value and status."""
         return f"{self.__class__.__name__}(_value={self._value!r}, status={self.status.name})"
 
     __slots__ = ("_status", "_details")
@@ -139,10 +205,18 @@ class ConstrainedValue(Value[T], ABC):
 
     @classmethod
     def _apply_strategy(cls, strategy: PipeLineStrategy, current_value: Any) -> Response[Any]:
-        """
-        Run a single pipeline strategy and normalize the result to a Response[Any].
-        - For transformations: return the strategy's Response.
-        - For validations: wrap the StatusResponse into a Response carrying current_value.
+        """Run a single pipeline strategy and normalize the result.
+
+        Behavior:
+            - For transformations: return the strategy's Response.
+            - For validations: wrap the StatusResponse into a Response that carries the current value unchanged.
+
+        Args:
+            strategy (PipeLineStrategy): The pipeline strategy to apply.
+            current_value (Any): The current value being threaded through the pipeline.
+
+        Returns:
+            Response[Any]: A normalized response containing status, details, and value.
         """
         if isinstance(strategy, TransformationStrategy):
             return strategy.transform(current_value)
@@ -153,11 +227,18 @@ class ConstrainedValue(Value[T], ABC):
         return Response(status=Status.EXCEPTION, details="Missing strategy handler", value=None)
 
     def _run_pipeline(self, value_in: InT, success_details:str)-> Response[T]:
-        """
-        The current value is threaded through the pipeline; transformation steps may change its
-        type (e.g., sanitize or convert), and validation steps check the current value without
-        changing it. On the first EXCEPTION status, the pipeline short-circuits and returns that
-        failure response; otherwise, it returns OK with the final canonical value.
+        """Thread the current value through the configured pipeline.
+
+        Transformation steps may change the value (or type), while validation steps only
+        inspect it. On the first ``Status.EXCEPTION`` the pipeline short-circuits and
+        returns that failure response; otherwise, it returns OK with the final canonical value.
+
+        Args:
+            value_in (InT): The raw input value to start the pipeline.
+            success_details (str): Details message to use when the pipeline completes with OK.
+
+        Returns:
+            Response[T]: The terminal response (status, details, and canonical value).
         """
         current_value = value_in  # Start with the initial value
 
@@ -172,23 +253,31 @@ class ConstrainedValue(Value[T], ABC):
 
     @abstractmethod
     def get_strategies(self) -> List[PipeLineStrategy]:
-        ...
+        """Return the ordered list of strategies for this pipeline.
 
+        Returns:
+            List[PipeLineStrategy]: Transformation and validation steps in the order to apply.
+        """
+        ...
     @property
     def status(self) -> Status:
+        """Current status (OK or EXCEPTION)."""
         return self._status
 
     @property
     def details(self) -> str:
+        """Human-readable details about the validation / transformation result."""
         return self._details
 
     @property
     def value(self) -> Optional[T]:
+        """Canonical value if valid; otherwise ``None`` when status is EXCEPTION."""
         if self._status == Status.EXCEPTION:
             return None
         return self._value
 
     def _same_status(self, other):
+        """Return True if both instances share the same Status."""
         return self.status == other.status
 
     def __eq__(self, other):
@@ -198,13 +287,26 @@ class ConstrainedValue(Value[T], ABC):
             return False
         return super().__eq__(other)
 
-    def _is_comparing(self, other: "ConstrainedValue[T]",
-                      func: Callable[["Value[T]"], bool | NotImplementedType]):
-        """
+    def _is_comparing(self, other: ConstrainedValue[T],
+                  func: Callable[[Value[T]], bool | NotImplementedType]):
+        """Perform a comparison with another ConstrainedValue instance.
+
         Internal helper for ordering comparisons:
-        - Ensures same concrete class
-        - Ensures both operands are valid (Status.OK)
-        - Delegates to the base Value comparator
+        - Ensures the same concrete subclass.
+        - Ensures both operands are valid (Status.OK).
+        - Delegates the comparison to the base Value comparator.
+
+        Args:
+            other (ConstrainedValue[T]): The other instance to compare against.
+            func (Callable[[Value[T]], bool | NotImplementedType]): The comparison
+                function to delegate to (e.g., ``super().__lt__``).
+
+        Returns:
+            bool | NotImplementedType: The result of the comparison if valid, or
+            ``NotImplemented`` if the instances are not comparable.
+
+        Raises:
+            ValueError: If either operand has a non-OK validation status.
         """
         if not self._class_is_same(other):
             return NotImplemented
