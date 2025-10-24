@@ -28,5 +28,9 @@ def main():
     print("dict size (should be 2):", len(d))
     print("dict[a] =", d[a])
 
+    class IntValue(Value[int]): pass
+    class StrValue(Value[str]): pass
+    print("IntValue(5) == StrValue('5'):", IntValue(5) == StrValue("5"))
+
 if __name__ == "__main__":
     main()

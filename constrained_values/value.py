@@ -47,6 +47,21 @@ class Value(Generic[T]):
 
     Attributes:
         _value (T): The wrapped value (read-only).
+
+    Example:
+        >>> a = Value(10)
+        >>> b = Value(10)
+        >>> c = Value(20)
+        >>> print("a == b:", a == b)
+        a == b: True
+        >>> print("a == c:", a == c)
+        a == c: False
+        >>> print("hash(a) == hash(b):", hash(a) == hash(b))
+        hash(a) == hash(b): True
+        >>> class IntValue(Value[int]): pass
+        >>> class StrValue(Value[str]): pass
+        >>> print("IntValue(5) == StrValue('5'):", IntValue(5) == StrValue("5"))
+        IntValue(5) == StrValue('5'): False
     """
 
     # Stored payload; immutable thanks to frozen dataclass

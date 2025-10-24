@@ -1,7 +1,7 @@
 """
-Example: Using ConstrainedRangeValue with a custom transform (Fahrenheit → Celsius).
+Example: Using RangeValue with a custom transform (Fahrenheit → Celsius).
 
-This demo shows how to subclass ConstrainedRangeValue and override
+This demo shows how to subclass RangeValue and override
 `get_custom_strategies()` to insert a transformation step into the pipeline.
 
 - Input values are provided in Fahrenheit (int or float).
@@ -51,7 +51,7 @@ def main():
     print("\n=== Out of range examples ===")
     for val in [-40, 10, 122]:
         cv = FahrenheitToCelsiusValue(val)
-        print(f"Input {val!r} → status={cv.status}, details={cv.details}")
+        print(f"Input {val!r} → status={cv.status}, \n details={cv.details}")
 
 if __name__ == "__main__":
     main()
