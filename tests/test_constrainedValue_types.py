@@ -96,11 +96,11 @@ class TestValidatedValueErrorsAndMessages(unittest.TestCase):
 
         with self.assertRaises(ValueError) as ctx:
             _ = ok < bad
-        self.assertIn('ConstrainedRangeValue: cannot compare invalid values', str(ctx.exception))
+        self.assertIn('RangeValue: cannot compare invalid values', str(ctx.exception))
 
         with self.assertRaises(ValueError) as ctx2:
             _ = bad <= ok
-        self.assertIn('ConstrainedRangeValue: cannot compare invalid values', str(ctx2.exception))
+        self.assertIn('RangeValue: cannot compare invalid values', str(ctx2.exception))
 
 class TestValidatedValueEqualitySemantics(unittest.TestCase):
     def test_equality_false_when_either_invalid(self):
@@ -134,25 +134,25 @@ class TestValidatedValueSortingBehaviour(unittest.TestCase):
 class TestValidatedValueRepr(unittest.TestCase):
     def test_repr_range_valid_ok(self):
         v = RangeValue(5, 1, 10)  # Status.OK
-        self.assertEqual(repr(v), "ConstrainedRangeValue(_value=5, status=OK)")
+        self.assertEqual(repr(v), "RangeValue(_value=5, status=OK)")
 
     def test_repr_range_invalid_preserves_raw_value_and_status(self):
         v = RangeValue("5", 1, 10)  # Status.EXCEPTION
         # Note the quotes around  '5' because of !r
-        self.assertEqual(repr(v), "ConstrainedRangeValue(_value=None, status=EXCEPTION)")
+        self.assertEqual(repr(v), "RangeValue(_value=None, status=EXCEPTION)")
 
     def test_repr_enum_valid_ok(self):
         e = EnumValue(5, [3, 5, 7])  # Status.OK
-        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=5, status=OK)")
+        self.assertEqual(repr(e), "EnumValue(_value=5, status=OK)")
 
     def test_repr_enum_invalid(self):
         e = EnumValue(4, [3, 5, 7])  # Status.EXCEPTION (4 not allowed)
-        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=EXCEPTION)")
+        self.assertEqual(repr(e), "EnumValue(_value=None, status=EXCEPTION)")
 
     def test_repr_handles_none_value_when_ok(self):
         # Edge case: if you ever allow None as a valid value
         e = EnumValue(None, [None])  # Status.OK
-        self.assertEqual(repr(e), "ConstrainedEnumValue(_value=None, status=OK)")
+        self.assertEqual(repr(e), "EnumValue(_value=None, status=OK)")
 
 class TestRangeTypes(unittest.TestCase):
     def test_bounds_type_must_match_making_sure_first_test(self):
@@ -160,7 +160,7 @@ class TestRangeTypes(unittest.TestCase):
         self.assertEqual(bad.status, Status.EXCEPTION)
         self.assertEqual(bad.details, "Type mismatch: expected type 'str' of value 100 to match 'int' of value 10")
 
-class TestConstrainedRangeValueWithCoercion(unittest.TestCase):
+class TestRangeValueWithCoercion(unittest.TestCase):
     # --- integration-style tests exercising the CRV pipeline with CoerceToType(type(low_value)) ---
 
     def test_int_value_with_float_bounds_is_coerced_to_float(self):
@@ -191,7 +191,7 @@ class Mixed(Enum):
     A = "a"
     B = "b"
 
-class TestConstrainedEnumValueNewAPI(unittest.TestCase):
+class TestEnumValueNewAPI(unittest.TestCase):
     def test_accepts_enum_class_and_underlying_values(self):
         # Using Enum class: should accept underlying values directly
         cv = EnumValue(True, DataOrder)
@@ -250,7 +250,7 @@ class _Color(Enum):
     RED = "r"
     BLUE = "b"
 
-class TestConstrainedEnumValueNoThrows(unittest.TestCase):
+class TestEnumValueNoThrows(unittest.TestCase):
     def test_empty_enum_yields_exception_status(self):
         cv = EnumValue("anything", _EmptyEnum)
         self.assertEqual(cv.status, Status.EXCEPTION)
@@ -279,7 +279,7 @@ class TestConstrainedEnumValueNoThrows(unittest.TestCase):
         bad = EnumValue(1, MyBool)
         self.assertEqual(bad.status, Status.EXCEPTION)
 
-class TestConstrainedEnumValuePlainValues(unittest.TestCase):
+class TestEnumValuePlainValues(unittest.TestCase):
     def test_plain_values_accepts_allowed_value(self):
         cv = EnumValue("a", ["a", "b"])
         self.assertEqual(cv.status, Status.OK)
@@ -336,7 +336,7 @@ class TestStrictValidatedValue(unittest.TestCase):
         self.assertIn("blocked", str(ctx.exception))
 
 # noinspection DuplicatedCode
-class TestConstrainedRangeValueInferValidTypes(unittest.TestCase):
+class TestRangeValueInferValidTypes(unittest.TestCase):
     def test_int_returns_int_only(self):
         self.assertEqual(
             RangeValue.infer_valid_types_from_value(123),
@@ -406,7 +406,7 @@ class FailingCustomRangeValue(RangeValue[int]):
         return [AlwaysFailTransform()]
 
 
-class TestConstrainedRangeValueCustomStrategies(unittest.TestCase):
+class TestRangeValueCustomStrategies(unittest.TestCase):
     def test_custom_strategy_runs_before_range(self):
         # Base value 4 is incremented to 5, which is inside 0..10
         cv = CustomRangeValue(4, 0, 10)
