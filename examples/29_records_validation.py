@@ -7,7 +7,7 @@ import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
 from typing import List, Dict, Any
-from constrained_values import ConstrainedRangeValue, ConstrainedEnumValue
+from constrained_values import RangeValue, EnumValue
 
 class Role(Enum):
     USER = "user"
@@ -17,8 +17,8 @@ def validate_records(rows: List[Dict[str, Any]]):
     out = []
     errs = []
     for i, row in enumerate(rows):
-        uid = ConstrainedRangeValue(row.get("id"), 1, 10**9)
-        role = ConstrainedEnumValue(row.get("role"), Role)
+        uid = RangeValue(row.get("id"), 1, 10 ** 9)
+        role = EnumValue(row.get("role"), Role)
         if uid.ok and role.ok:
             out.append({"id": uid.value, "role": role.value})
         else:

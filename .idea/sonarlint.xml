@@ -3,7 +3,10 @@
   <component name="SonarLintProjectSettings">
     <option name="fileExclusions">
       <list>
-          <option value="GLOB:**/*.md" />
+        <option value="GLOB:**/*.md" />
+        <option value="FILE:docs/constrained_values.html" />
+        <option value="FILE:docs/index.html" />
+        <option value="FILE:docs/search.js" />
       </list>
     </option>
   </component>

@@ -6,7 +6,7 @@ import sys, pathlib
 # Make repo root importable when running this file directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
-from constrained_values import ConstrainedEnumValue
+from constrained_values import EnumValue
 
 
 class Mixed(Enum):
@@ -15,8 +15,8 @@ class Mixed(Enum):
 
 def main():
     allowed = [Mixed.A, Mixed.B]
-    x = ConstrainedEnumValue(Mixed.A, allowed)
-    y = ConstrainedEnumValue("b", allowed)
+    x = EnumValue(Mixed.A, allowed)
+    y = EnumValue("b", allowed)
     print("x:", x.status.name, x.value)
     print("y:", y.status.name, y.value)
 

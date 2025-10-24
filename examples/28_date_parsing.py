@@ -7,7 +7,7 @@ import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from datetime import date, datetime
 from typing import List
-from constrained_values import Response, Status, TypeValidationStrategy, ConstrainedRangeValue
+from constrained_values import Response, Status, TypeValidationStrategy, RangeValue
 from constrained_values.value import TransformationStrategy, ConstrainedValue, PipeLineStrategy
 
 FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%b-%Y"]
@@ -32,7 +32,7 @@ class BirthDate(ConstrainedValue[date]):
 def main():
     d = BirthDate("2000-01-31")
     print("parsed:", d.status.name, d.value)
-    r = ConstrainedRangeValue(d.value, date(1900,1,1), date(2100,1,1))
+    r = RangeValue(d.value, date(1900, 1, 1), date(2100, 1, 1))
     print("in-range:", r.status.name)
 
 if __name__ == "__main__":

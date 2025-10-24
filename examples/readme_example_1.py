@@ -4,7 +4,7 @@ Instead of passing an integer around and checking its bounds everywhere,
 we create an `Age` type by defining a class.
 """
 import sys, pathlib
-from constrained_values import ConstrainedRangeValue
+from constrained_values import RangeValue
 
 # Make repo root importable when running this file directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
@@ -12,15 +12,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 def main():
     # Define an 'Age' type that must be an integer between 0 and 120.
-    class Age(ConstrainedRangeValue[int]):
+    class Age(RangeValue[int]):
         def __init__(self, value):
-            super().__init__(value, 0, 120)
+            super().__init__(value, 10, 120)
 
     # Now, let's use our new Age type.
     valid_age = Age(30)
     invalid_age = Age(150)
     invalid_age_by_type = Age("21")
-    another_age = Age(32)
+    another_valid_age = Age(32)
+
+    print(f"Another valid age: {another_valid_age.value}, is greater than valid age: {valid_age.value} ? {another_valid_age > valid_age}")
+    #Output: Another valid age: 32, is greater than valid age: 30 ? True
 
     print(f"Valid age: {valid_age.value}, Is OK: {valid_age.ok}")
     # Output: Valid age: 30, Is OK: True
@@ -33,10 +36,6 @@ def main():
 
     print(f"Error details: {invalid_age_by_type.details}")
     # Output: Error details: Value must be one of 'int', got 'str'
-
-    print(f"another_age: {another_age.value}, is greater than valid age: {valid_age.value} ? {another_age > valid_age}")
-    #Output: another_age: 32, is greater than valid age: 30 ? True
-
 
 
 if __name__ == "__main__":

@@ -5,11 +5,11 @@ Allowed values as plain list/tuple.
 import sys, pathlib
 # Make repo root importable when running this file directly
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from constrained_values import ConstrainedEnumValue
+from constrained_values import EnumValue
 
 def main():
-    ok = ConstrainedEnumValue("a", ["a", "b"])
-    bad = ConstrainedEnumValue("c", ["a", "b"])
+    ok = EnumValue("a", ["a", "b"])
+    bad = EnumValue("c", ["a", "b"])
     print("ok:", ok.status.name, ok.value)
     print("bad:", bad.status.name, bad.details)
 

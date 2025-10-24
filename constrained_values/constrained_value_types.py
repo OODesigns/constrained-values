@@ -66,7 +66,7 @@ class CoerceEnumMemberToValue(TransformationStrategy[object, object]):
         return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=value)
 
 
-class ConstrainedEnumValue(ConstrainedValue[T]):
+class EnumValue(ConstrainedValue[T]):
     """Validates enum-like values using a pipeline of strategies.
 
     Pipeline:
@@ -82,7 +82,7 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
         success_details (str, optional): Details for successful validation. Defaults to DEFAULT_SUCCESS_MESSAGE.
 
     Example:
-        >>> ConstrainedEnumValue('A', ['A', 'B', 'C'])
+        >>> EnumValue('A', ['A', 'B', 'C'])
     """
     __slots__ = ("_strategies",)
 
@@ -110,7 +110,7 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
             return [], False, "Must be a non-empty sequence."
 
         # Sequence of Enum members
-        if ConstrainedEnumValue._all_enum_members(seq):
+        if EnumValue._all_enum_members(seq):
             return [m.value for m in seq], True, None
 
         # Plain values
@@ -125,7 +125,7 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
             valid_values: Sequence[T] | Type[Enum],
             success_details: str = DEFAULT_SUCCESS_MESSAGE,
     ):
-        allowed, needs_coercion, err = ConstrainedEnumValue._normalize_allowed(valid_values)
+        allowed, needs_coercion, err = EnumValue._normalize_allowed(valid_values)
 
         strategies: List[PipeLineStrategy] = []
         if err is None:
@@ -143,7 +143,7 @@ class ConstrainedEnumValue(ConstrainedValue[T]):
         super().__init__(value, success_details)
 
 
-class ConstrainedRangeValue(ConstrainedValue[T]):
+class RangeValue(ConstrainedValue[T]):
     """Constrained numeric value bounded between low_value and high_value (inclusive).
 
     Validation/transform pipeline:
@@ -162,7 +162,7 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
         success_details (str, optional): Details for successful validation. Defaults to DEFAULT_SUCCESS_MESSAGE.
 
     Example:
-        >>> ConstrainedRangeValue(5, 1, 10)
+        >>> RangeValue(5, 1, 10)
 
     Notes:
         - Canonical values are always coerced to the type of low_value.
@@ -195,7 +195,7 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
         # Initialize the strategies for this subclass
         object.__setattr__(self, "_type_strategies", [
             SameTypeValidationStrategy(low_value, high_value),
-            TypeValidationStrategy(ConstrainedRangeValue.infer_valid_types_from_value(low_value)),
+            TypeValidationStrategy(RangeValue.infer_valid_types_from_value(low_value)),
             CoerceToType(type(low_value))
         ])
         object.__setattr__(self, "_range_strategies", [
@@ -205,7 +205,7 @@ class ConstrainedRangeValue(ConstrainedValue[T]):
 
 
 
-class StrictConstrainedValue(ConstrainedValue[T], ABC):
+class StrictValue(ConstrainedValue[T], ABC):
     """Stricter version of ConstrainedValue that raises an exception immediately if validation fails.
 
     Args:

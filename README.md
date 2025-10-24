@@ -79,28 +79,32 @@ This demo shows how to subclass ConstrainedRangeValue and override
 
 ```python
 # See: examples/readme_example_2.py
-from constrained_values import Response, Status, ConstrainedRangeValue
+from constrained_values import Response, Status, RangeValue
 from constrained_values.constants import DEFAULT_SUCCESS_MESSAGE
 from constrained_values.value import TransformationStrategy
+
 
 class FahrenheitToCelsius(TransformationStrategy[float, float]):
     """
     Define a transformation strategy for Fahrenheit.
     input and output types are float
     """
+
     def transform(self, value: float) -> Response[float]:
         try:
-            c = round((float(value) - 32.0) * (5.0 / 9.0),2)
+            c = round((float(value) - 32.0) * (5.0 / 9.0), 2)
             return Response(Status.OK, DEFAULT_SUCCESS_MESSAGE, c)
         except Exception as e:
             return Response(Status.EXCEPTION, str(e), None)
 
-class FahrenheitToCelsiusValue(ConstrainedRangeValue[float]):
+
+class FahrenheitToCelsiusValue(RangeValue[float]):
     """
     Valid Celsius value between -10 and 40, inclusive.
     Accepts input as Fahrenheit (int/float).
     Fahrenheit is converted internally to Celsius before validation.
     """
+
     def __init__(self, value: int | float):
         super().__init__(value, -10.0, 40.0)
 
@@ -134,10 +138,11 @@ Here’s how you can model this entire chain of validation and transformation us
 ```python
 # See: examples/readme_example_3.py
 from typing import List
-from constrained_values import (Response, Status, ConstrainedRangeValue,
+from constrained_values import (Response, Status, RangeValue,
                                 ValidationStrategy, TypeValidationStrategy, DEFAULT_SUCCESS_MESSAGE)
 from constrained_values.response import StatusResponse
 from constrained_values.value import TransformationStrategy, PipeLineStrategy
+
 
 # --- Define Custom Strategies for our Pipeline ---
 class AllowedInputRegister(ValidationStrategy[int]):
@@ -182,7 +187,7 @@ class RawToCelsius(TransformationStrategy[int, float]):
         return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=celsius)
 
 
-class VentilationTemperature(ConstrainedRangeValue[float]):
+class VentilationTemperature(RangeValue[float]):
     """
     This value object encapsulates the full pipeline of reading and validating
     temperature data from Modbus (https://www.modbus.org/) input registers, converting to Celsius, and
@@ -201,8 +206,8 @@ class VentilationTemperature(ConstrainedRangeValue[float]):
                 DetectSensorErrors(),
                 RawToCelsius()] + super().get_strategies()
 
-
-    -- Test Cases --        
+    -- Test
+    Cases - -
     registers = [215, -32768, 32767, 402]  # Example Modbus register values
 
     print("=== Valid register 0 ===")

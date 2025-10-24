@@ -29,7 +29,7 @@ The pipeline processes input in multiple steps:
 """
 import sys, pathlib
 from typing import List
-from constrained_values import (Response, Status, ConstrainedRangeValue,
+from constrained_values import (Response, Status, RangeValue,
                                 ValidationStrategy, TypeValidationStrategy, DEFAULT_SUCCESS_MESSAGE)
 from constrained_values.response import StatusResponse
 from constrained_values.value import TransformationStrategy, PipeLineStrategy
@@ -80,7 +80,7 @@ class RawToCelsius(TransformationStrategy[int, float]):
         return Response(status=Status.OK, details=DEFAULT_SUCCESS_MESSAGE, value=celsius)
 
 
-class VentilationTemperature(ConstrainedRangeValue[float]):
+class VentilationTemperature(RangeValue[float]):
     """
     This value object encapsulates the full pipeline of reading and validating
     temperature data from Modbus input registers, converting to Celsius, and

@@ -8,7 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
-from constrained_values import ConstrainedEnumValue, ConstrainedRangeValue
+from constrained_values import EnumValue, RangeValue
 
 class Color(Enum):
     RED = "red"
@@ -23,8 +23,8 @@ class WidgetConfig:
 
     @classmethod
     def from_input(cls, name: str, color: Any, slots: Any):
-        cv_color = ConstrainedEnumValue(color, Color)
-        cv_slots = ConstrainedRangeValue(slots, 1, 16)
+        cv_color = EnumValue(color, Color)
+        cv_slots = RangeValue(slots, 1, 16)
         ok = cv_color.ok and cv_slots.ok
         errors = {}
         if not cv_color.ok: errors["color"] = cv_color.details

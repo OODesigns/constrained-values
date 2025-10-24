@@ -10,7 +10,7 @@ This demo shows how to subclass ConstrainedRangeValue and override
 - Results are rounded to two decimal places.
 """
 import sys, pathlib
-from constrained_values import Response, Status, ConstrainedRangeValue
+from constrained_values import Response, Status, RangeValue
 from constrained_values.constants import DEFAULT_SUCCESS_MESSAGE
 from constrained_values.value import TransformationStrategy
 
@@ -30,7 +30,7 @@ class FahrenheitToCelsius(TransformationStrategy[float, float]):
             return Response(Status.EXCEPTION, str(e), None)
 
 
-class FahrenheitToCelsiusValue(ConstrainedRangeValue[float]):
+class FahrenheitToCelsiusValue(RangeValue[float]):
     """
     Valid Celsius value between -10 and 40, inclusive.
     Accepts input as Fahrenheit (int/float).

@@ -1,0 +1,44 @@
+{#
+Extends the default template but overrides how signatures/annotations render
+to remove the leading "~" in TypeVar names like "~T".
+#}
+{% extends "default/module.html.jinja2" %}
+
+{# override the 'annotation' macro to strip the "~" from TypeVar names #}
+{% macro annotation(var) -%}
+    {%- if var.annotation_str -%}
+        <span class="annotation">
+      {{ var.annotation_str | replace('~', '') | escape | linkify }}
+    </span>
+    {%- endif -%}
+{%- endmacro %}
+
+{# strip "~" from TypeVar names in function/method signatures #}
+{% macro function(fn) -%}
+    {{ decorators(fn) }}
+    {% if fn.name == "__init__" %}
+        <span class="name">{{ ".".join(fn.qualname.split(".")[:-1]) }}</span>
+        {{- fn.signature_without_self
+          | format_signature(colon=False)
+          | replace('~', '')
+          | linkify
+                }}
+    {% else %}
+        <span class="def">{{ fn.funcdef }}</span>
+        <span class="name">{{ fn.name }}</span>
+        {{- fn.signature
+          | format_signature(colon=True)
+          | replace('~', '')
+          | linkify
+                }}
+    {% endif %}
+{%- endmacro %}
+
+{# --- override: class header --- #}
+{% macro class(cls) -%}
+    {{ decorators(cls) }}
+    <span class="def">class</span>
+    <span class="name">{{ cls.qualname }}</span>
+    {{- bases(cls) | replace('~', '') -}}:
+{%- endmacro %}
+

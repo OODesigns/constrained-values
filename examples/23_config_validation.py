@@ -8,7 +8,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from enum import Enum
 from typing import Dict, Tuple, Any
 
-from constrained_values import ConstrainedRangeValue, Status, ConstrainedEnumValue
+from constrained_values import RangeValue, Status, EnumValue
 
 class LogLevel(Enum):
     DEBUG = "debug"
@@ -18,13 +18,13 @@ class LogLevel(Enum):
 
 def validate_config(cfg: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
     errors = {}
-    port = ConstrainedRangeValue(cfg.get("port"), 1024, 65535)
+    port = RangeValue(cfg.get("port"), 1024, 65535)
     if port.status != Status.OK:
         errors["port"] = port.details
-    level = ConstrainedEnumValue(cfg.get("log_level"), LogLevel)
+    level = EnumValue(cfg.get("log_level"), LogLevel)
     if level.status != Status.OK:
         errors["log_level"] = level.details
-    feature = ConstrainedEnumValue(cfg.get("feature_x"), [True, False])
+    feature = EnumValue(cfg.get("feature_x"), [True, False])
     if feature.status != Status.OK:
         errors["feature_x"] = feature.details
     if errors:

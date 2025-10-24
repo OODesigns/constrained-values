@@ -1,18 +1,14 @@
 """
-Validated Value Library
-
-A Python library for creating validated value objects with type checking,
-range validation, and enum validation capabilities.
+.. include:: ../docs/introduction.md
 """
-
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .status import Status
 from .response import Response, T
 from .value import Value, ValidationStrategy, ConstrainedValue
 from .constrained_value_types import (
-    ConstrainedEnumValue,
-    ConstrainedRangeValue,
-    StrictConstrainedValue,
+    EnumValue,
+    RangeValue,
+    StrictValue,
 )
 from .strategies import (
     TypeValidationStrategy,
@@ -23,16 +19,16 @@ from .strategies import (
 __version__ = "0.1.1"
 
 __all__ = [
-    "DEFAULT_SUCCESS_MESSAGE",
-    "Status",
-    "Response",
     "Value",
+    "ConstrainedValue",
     "ValidationStrategy",
     "TypeValidationStrategy",
     "RangeValidationStrategy",
     "EnumValidationStrategy",
-    "ConstrainedValue",
-    "ConstrainedEnumValue",
-    "ConstrainedRangeValue",
-    "StrictConstrainedValue",
+    "EnumValue",
+    "RangeValue",
+    "StrictValue",
+    "DEFAULT_SUCCESS_MESSAGE",
+    "Status",
+    "Response",
 ]

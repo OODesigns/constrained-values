@@ -5,7 +5,7 @@ Accept both enum members and their underlying values.
 
 from enum import Enum
 
-from constrained_values import ConstrainedEnumValue
+from constrained_values import EnumValue
 
 
 class DataOrder(Enum):
@@ -13,8 +13,8 @@ class DataOrder(Enum):
     LSB = False
 
 def main():
-    a = ConstrainedEnumValue(DataOrder.MSB, DataOrder)
-    b = ConstrainedEnumValue(True, DataOrder)
+    a = EnumValue(DataOrder.MSB, DataOrder)
+    b = EnumValue(True, DataOrder)
     print("member →", a.status.name, a.value)
     print("underlying →", b.status.name, b.value)
 

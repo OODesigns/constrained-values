@@ -5,7 +5,7 @@ from typing import List
 
 from constrained_values.constants import DEFAULT_SUCCESS_MESSAGE
 from constrained_values.status import Status
-from constrained_values.constrained_value_types import ConstrainedEnumValue, ConstrainedRangeValue
+from constrained_values.constrained_value_types import EnumValue, RangeValue
 from constrained_values.strategies import (
     RangeValidationStrategy, TypeValidationStrategy, SameTypeValidationStrategy, get_types,
     CoerceToType, FailValidationStrategy,
@@ -16,13 +16,13 @@ from constrained_values.value import ConstrainedValue, TransformationStrategy, P
 
 class TestValidatedValueStrategies(unittest.TestCase):
     def test_enum_validated_value_strategies(self):
-        enum_val = ConstrainedEnumValue(Status.OK, Status)
+        enum_val = EnumValue(Status.OK, Status)
 
         # Test that EnumValidatedValue has specific strategies
         self.assertEqual(len(enum_val.get_strategies()), 3, "EnumValidatedValue should have 3 validation strategies")
 
         # Prove that EnumValidatedValue strategies are not shared with RangeValidatedValue
-        range_val = ConstrainedRangeValue(15, 10, 20)
+        range_val = RangeValue(15, 10, 20)
         self.assertNotEqual(enum_val.get_strategies(), range_val.get_strategies(), "EnumValidatedValue should not share strategies with RangeValidatedValue")
 
     # Test chaining between strategies in run_validations
