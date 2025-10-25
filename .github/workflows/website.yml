@@ -1,11 +1,13 @@
+# .github/workflows/website.yml
 name: website
+
 on:
   push:
     branches: [ master ]
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 permissions:
@@ -20,23 +22,41 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install deps
+
+      - name: Install deps (package + pdoc)
         run: |
           python -m pip install --upgrade pip
           pip install -e .
           pip install "pdoc>=14,<15"
-      - name: Build docs with pdoc
+
+      # IMPORTANT: do NOT delete docs/ (it contains your intro + templates)
+      - name: Build docs with pdoc (keep docs/ as source)
         run: |
-          rm -rf docs
-          pdoc constrained_values -t docs/templates -o docs -d google
-          test -f docs/index.html || (echo "No index.html produced" && exit 1)
+          rm -rf site
+          # -t docs tells pdoc to use templates from docs/
+          # -o site writes the generated HTML to site/
+          pdoc -t docs -o site constrained_values
+
+          # Sanity checks
+          test -f site/index.html || (echo "No index.html produced" && exit 1)
+          test -f docs/introduction.md || (echo "Missing docs/introduction.md (include target)" && exit 1)
+
+      # Optional: upload a preview so you can download the rendered HTML from the run
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-preview
+          path: site/
+
+      # Upload the built site to Pages
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: docs/
+          path: site/
 
   deploy:
     needs: build
