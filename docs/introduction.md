@@ -273,4 +273,4 @@ status=Status.EXCEPTION, details=Sensor short circuit
 === Out of range (register 3) ===
 status=Status.EXCEPTION, details=Value must be less than or equal to 40.0, got 40.2
 ```
-## API Documentation
+
