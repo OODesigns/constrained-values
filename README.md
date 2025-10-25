@@ -1,4 +1,4 @@
-<div style="text-align: center;">
+<p align="center">
 
   <a href="https://oodesigns.github.io/constrained-values/constrained_values.html" style="text-decoration: none;">
     <img height="20" alt="Documentation" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white">
@@ -18,7 +18,7 @@
     <img height="20" alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
   </a>
 
-</div>
+</p>
 
 
 
