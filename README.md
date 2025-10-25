@@ -1,24 +1,15 @@
 <p>
+<p>
   <a href="https://oodesigns.github.io/constrained-values/constrained_values.html">
     <img height="20" alt="Documentation" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white">
-  </a>
-
-  <a href="https://github.com/oodesigns/constrained-values/actions">
+  </a><a href="https://github.com/oodesigns/constrained-values/actions">
     <img height="20" alt="Build Status" src="https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg">
-  </a>
-
-  <a href="https://pypi.org/project/constrained-values/">
+  </a><a href="https://pypi.org/project/constrained-values/">
     <img height="20" alt="PyPI Version" src="https://img.shields.io/pypi/v/constrained-values.svg?logo=pypi&logoColor=white">
-  </a>
-
-  <img height="20" alt="Python Versions" src="https://img.shields.io/pypi/pyversions/constrained-values.svg">
-
-<a href="https://opensource.org/licenses/MIT">
+  </a><img height="20" alt="Python Versions" src="https://img.shields.io/pypi/pyversions/constrained-values.svg"><a href="https://opensource.org/licenses/MIT">
     <img height="20" alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
   </a>
-
 </p>
-
 # Constrained Values
 
 A lightweight Python library for **creating type-safe, self-validating value objects** — transforming primitive data into meaningful, domain-aware objects with rich validation and transformation pipelines.
