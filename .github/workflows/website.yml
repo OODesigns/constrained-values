@@ -1,5 +1,5 @@
 # .github/workflows/website.yml
-name: website
+name: Website
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           rm -rf site
           # -t docs tells pdoc to use templates from docs/
           # -o site writes the generated HTML to site/
-          pdoc -t docs -o site constrained_values
+          pdoc constrained_values -t docs/templates -o site -d google
 
           # Sanity checks
           test -f site/index.html || (echo "No index.html produced" && exit 1)
