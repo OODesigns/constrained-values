@@ -91,7 +91,7 @@ jobs:
       - name: Build docs with pdoc
         run: |
           rm -rf site          
-          pdoc constrained_values examples -t docs/templates -o docs -d google
+          pdoc constrained_values examples -t docs/templates -o site -d google
 
           # Sanity check: verify the include file exists and index.html is generated.
           test -f docs/introduction.md || (echo "Missing docs/introduction.md (include target)" && exit 1)
