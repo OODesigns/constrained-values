@@ -51,10 +51,4 @@ Explore all **31 runnable examples** included with `constrained_values`.
 31. [Dataclass Integration](./examples/31_dataclass_integration.html) · [source](https://github.com/OODesigns/constrained-values/blob/master/examples/31_dataclass_integration.py)
 
 ---
-
-### Notes
-
-- The links above assume your published site has `examples.html` at the root and the individual pages under `examples/…`. That’s exactly how your generated file is structured. :contentReference[oaicite:1]{index=1}
-- If you place `docs/examples.md` in a subfolder that changes relative paths, switch `./examples/...` to the right relative or root-relative path (e.g. `../examples/...`).
-
-Want me to drop this into your repo as a PR snippet (or tweak the relative paths if your `docs/examples.md` lives under a deeper folder)?
+API Documentation
