@@ -1,27 +1,10 @@
 <p align="center">
-
-  <a href="https://oodesigns.github.io/constrained-values/constrained_values.html" style="text-decoration: none;">
-    <img height="20" alt="Documentation" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white">
-  </a>
-
-  <a href="https://github.com/oodesigns/constrained-values/actions" style="text-decoration: none;">
-    <img height="20" alt="Build Status" src="https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg">
-  </a>
-
-  <a href="https://pypi.org/project/constrained-values/" style="text-decoration: none;">
-    <img height="20" alt="PyPI Version" src="https://img.shields.io/pypi/v/constrained-values.svg?logo=pypi&logoColor=white">
-  </a>
-
-  <img height="20" alt="Python Versions" src="https://img.shields.io/pypi/pyversions/constrained-values.svg">
-
-  <a href="https://opensource.org/licenses/MIT" style="text-decoration: none;">
-    <img height="20" alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
-  </a>
-
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white)](https://oodesigns.github.io/constrained-values/constrained_values.html)
+[![Build Status](https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg)](https://github.com/oodesigns/constrained-values/actions)
+[![PyPI Version](https://img.shields.io/pypi/v/constrained-values.svg?logo=pypi&logoColor=white)](https://pypi.org/project/constrained-values/)
+![Python Versions](https://img.shields.io/pypi/pyversions/constrained-values.svg)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 </p>
-
-
-
 ## Constrained Values
 
 A lightweight Python library for **creating type-safe, self-validating value objects** — transforming primitive data into meaningful, domain-aware objects with rich validation and transformation pipelines.
