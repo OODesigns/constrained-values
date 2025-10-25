@@ -56,7 +56,7 @@ Let's explore the library's features, starting with a simple case and building u
 The most basic use case is ensuring a value falls within a specific range. Instead of passing an integer around and checking its bounds everywhere, we create an `Age` type by defining a class.
 
 ```python
-# See: examples/readme_example_1.py
+# See: examples/example_1.py
 # Define an 'Age' type that must be an integer between 0 and 120.
 class Age(RangeValue[int]):
     def __init__(self, value):
@@ -103,7 +103,7 @@ For example, if your bounds are floats, both int and float inputs are accepted a
 This inference is handled internally by RangeValue.infer_valid_types_from_value().
 
 ```python
-# See: examples/readme_example_2.py
+# See: examples/example_2.py
 class FahrenheitToCelsius(TransformationStrategy[float, float]):
     """
     Define a transformation strategy for Fahrenheit.
@@ -171,7 +171,7 @@ The process involves multiple steps:
 Here’s how you can model this entire chain of validation and transformation using a custom `ConstrainedRangeValue`.
 
 ```python
-# See: examples/readme_example_3.py
+# See: examples/example_3.py
 class AllowedInputRegister(ValidationStrategy[int]):
 """Checks if the selected register address is valid."""
 

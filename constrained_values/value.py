@@ -205,6 +205,26 @@ class ConstrainedValue(Value[T], ABC):
 
     Raises:
         ValueError: When calling :meth:`unwrap` on an invalid instance.
+    Example:
+        >>> class Strip(TransformationStrategy[str, str]):
+        ...     def transform(self, value: str) -> Response[str]:
+        ...         return Response(Status.OK, "stripped", value.strip())
+        >>>
+        >>> class NonEmpty(ValidationStrategy[str]):
+        ...     def validate(self, value: str) -> StatusResponse:
+        ...         return StatusResponse(Status.OK, "ok")
+        ...                 if value else StatusResponse(Status.EXCEPTION, "empty")
+        >>>
+        >>> class Name(ConstrainedValue[str]):
+        ...     def get_strategies(self): return [Strip(), NonEmpty()]
+        >>>
+        >>> a = Name(" Alice ")
+        >>> b = Name("Alice")
+        >>> c = Name("   ")
+        >>> print(a.value, a.ok, a == b, bool(c))
+        Alice True True False
+        >>> print(c)
+        <invalid Name: empty>
     """
     def __repr__(self):
         """Developer-friendly representation including value and status."""
