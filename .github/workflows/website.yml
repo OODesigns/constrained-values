@@ -91,11 +91,12 @@ jobs:
       - name: Build docs with pdoc
         run: |
           rm -rf site          
-          pdoc constrained_values examples -t docs/templates -o docs -d google
+          pdoc constrained_values -t docs/templates -o docs -d google
 
           # Sanity check: verify the include file exists and index.html is generated.
           test -f docs/introduction.md || (echo "Missing docs/introduction.md (include target)" && exit 1)
-         
+          test -f docs/examples.md || (echo "Missing docs/examples.md (include target)" && exit 1)
+          test -f site/index.html  || (echo "No site/index.html produced by pdoc" && exit 1)
 
       # ------------------------------------------------------------
       # 5. (Optional) Upload the generated site as a build artifact so you
