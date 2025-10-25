@@ -1,15 +1,43 @@
-# .github/workflows/website.yml
-name: Website
+# ======================================================================
+# Workflow: Build and publish documentation to GitHub Pages using pdoc
+# ----------------------------------------------------------------------
+# Triggers:
+#   - When you push to master
+#   - When you manually trigger from the Actions tab (workflow_dispatch)
+#
+# Summary:
+#   1. Checks out your repository.
+#   2. Sets up Python.
+#   3. Installs your package and pdoc.
+#   4. Builds HTML documentation using pdoc.
+#      - Uses templates in ./docs/templates/
+#      - Outputs to ./site/
+#      - Uses the "google" docstring style for parsing.
+#   5. Uploads ./site/ as a GitHub Pages artifact.
+#   6. Deploys that artifact to your Pages site.
+# ======================================================================
+
+name: website
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch:
+    branches: [ master ]         # Trigger on pushes to master.
+  workflow_dispatch:             # Allow manual trigger from the Actions UI.
 
+# ----------------------------------------------------------------------
+# Prevent two runs from overlapping (e.g., multiple quick commits).
+# The latest run cancels any in-progress deployment.
+# ----------------------------------------------------------------------
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
+# ----------------------------------------------------------------------
+# Permissions:
+#  - contents: read  → to read your repo files
+#  - pages: write    → to publish to GitHub Pages
+#  - id-token: write → to authenticate securely with GitHub Pages
+# ----------------------------------------------------------------------
 permissions:
   contents: read
   pages: write
@@ -17,56 +45,99 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+    runs-on: ubuntu-latest       # Hosted Ubuntu runner.
 
-      - uses: actions/setup-python@v5
+    steps:
+      # ------------------------------------------------------------
+      # 1. Clone your repo into the runner’s workspace.
+      # ------------------------------------------------------------
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # Ensures the default token isn't reused accidentally.
+
+      # ------------------------------------------------------------
+      # 2. Set up Python 3.12 environment (enough for pdoc + your package).
+      # ------------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install deps (package + pdoc)
+      # ------------------------------------------------------------
+      # 3. Install your package + pdoc.
+      #    - "pip install -e ." makes your package importable.
+      #    - pdoc builds the documentation site.
+      # ------------------------------------------------------------
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
           pip install "pdoc>=14,<15"
 
-      # IMPORTANT: do NOT delete docs/ (it contains your intro + templates)
-      - name: Build docs with pdoc (keep docs/ as source)
+      # ------------------------------------------------------------
+      # 4. Build your documentation using pdoc.
+      #
+      # Notes:
+      #  - `-t docs/templates` tells pdoc where your custom HTML/Jinja templates live.
+      #  - `-o site` specifies the output folder for generated HTML.
+      #  - `-d google` means pdoc parses Google-style docstrings.
+      #  - `constrained_values` is the top-level package being documented.
+      #
+      # We build into ./site to keep ./docs (with your templates + intro.md)
+      # untouched — that’s important because your __init__.py includes:
+      #     .. include:: ../docs/introduction.md
+      # ------------------------------------------------------------
+      - name: Build docs with pdoc
         run: |
           rm -rf site
-          # -t docs tells pdoc to use templates from docs/
-          # -o site writes the generated HTML to site/
           pdoc constrained_values -t docs/templates -o site -d google
 
-          # Sanity checks
-          test -f site/index.html || (echo "No index.html produced" && exit 1)
+          # Sanity check: verify the include file exists and index.html is generated.
           test -f docs/introduction.md || (echo "Missing docs/introduction.md (include target)" && exit 1)
+          test -f site/index.html      || (echo "No site/index.html produced by pdoc" && exit 1)
 
-      # Optional: upload a preview so you can download the rendered HTML from the run
-      - name: Upload preview artifact
+      # ------------------------------------------------------------
+      # 5. (Optional) Upload the generated site as a build artifact so you
+      #    can inspect it directly from the Actions UI if something looks wrong.
+      # ------------------------------------------------------------
+      - name: Upload site preview artifact
         uses: actions/upload-artifact@v4
         with:
           name: site-preview
           path: site/
 
-      # Upload the built site to Pages
+      # ------------------------------------------------------------
+      # 6. Upload ./site as a "Pages artifact" for the deployment job.
+      # ------------------------------------------------------------
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: site/
 
+  # ===================================================================
+  # Deployment job — runs after `build` finishes successfully.
+  # This publishes your site to GitHub Pages.
+  # ===================================================================
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     permissions:
       pages: write
       id-token: write
+
+    # Environment "github-pages" is automatically managed by GitHub.
+    # The URL below gets filled in automatically by the deploy step.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
+      # ------------------------------------------------------------
+      # This action triggers GitHub’s internal Pages deployment pipeline.
+      # That’s why you see a separate “Pages build and deployment” job
+      # in the Actions UI — it’s run by GitHub internally.
+      # ------------------------------------------------------------
       - id: deployment
         uses: actions/deploy-pages@v4

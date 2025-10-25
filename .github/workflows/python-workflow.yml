@@ -1,31 +1,45 @@
+# Runs your package tests on multiple Python versions whenever you push to master
+# or open a PR targeting master. This is your "does the code still work?" guardrail.
+
 name: Python Package CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ]    # trigger on pushes to master
   pull_request:
-    branches: [ "master" ]
+    branches: [ "master" ]    # and on PRs into master
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest     # use GitHub-hosted Ubuntu VM
+
     strategy:
       matrix:
+        # Test against these Python versions in parallel
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
+      # 1) Check out your repository's code onto the runner
+      - name: Check out code
+        uses: actions/checkout@v4
 
+      # 2) Install the matrix-selected Python version
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
+      # 3) Install your package (and any runtime deps) in editable mode
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+          # If you had test-only dependencies (pytest, coverage, etc.)
+          # you'd pip install them here too.
 
+      # 4) Run your unit tests (unittest discovery under ./tests)
       - name: Run unit tests
         run: |
           python -m unittest discover -s tests -p "test_*.py" -v
+          # If you use pytest instead:
+          # pytest -q
