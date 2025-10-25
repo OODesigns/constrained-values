@@ -1,17 +1,13 @@
-# .github/workflows/website.yml
 name: website
-
 on:
   push:
-    branches: [ master ]   # your default branch is master
-  workflow_dispatch:       # optional: run manually from Actions tab
+    branches: [ master ]
+  workflow_dispatch:
 
-# Avoid overlapping deployments
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
-# Minimal permissions for Pages
 permissions:
   contents: read
   pages: write
@@ -24,31 +20,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Cache pip (optional)
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install deps (your package + pdoc)
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install pdoc
-
-      # Build static HTML into ./docs
+          pip install "pdoc>=14,<15"
       - name: Build docs with pdoc
         run: |
           rm -rf docs
-          pdoc -o docs constrained_values -t docs/templates -d google
-
+          pdoc constrained_values -t docs/templates -o docs -d google
+          test -f docs/index.html || (echo "No index.html produced" && exit 1)
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
