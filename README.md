@@ -1,41 +1,55 @@
+<p>
+  <a href="https://oodesigns.github.io/constrained-values/constrained_values.html">
+    <img height="20" alt="Documentation" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white">
+  </a>
+  <a href="https://github.com/oodesigns/constrained-values/actions">
+    <img height="20" alt="Build Status" src="https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg">
+  </a>
+  <a href="https://pypi.org/project/constrained-values/">
+    <img height="20" alt="PyPI Version" src="https://img.shields.io/pypi/v/constrained-values.svg?logo=pypi&logoColor=white">
+  </a>
+  <img height="20" alt="Python Versions" src="https://img.shields.io/pypi/pyversions/constrained-values.svg">
+  <a href="https://opensource.org/licenses/MIT">
+    <img height="20" alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
+  </a>
+</p>
+
 # Constrained Values
 
-A Python library for creating type-safe, self-validating value objects using a powerful transformation and validation pipeline.
+A lightweight Python library for **creating type-safe, self-validating value objects** — transforming primitive data into meaningful, domain-aware objects with rich validation and transformation pipelines.
 
-## The Philosophy: Beyond Primitive Types
+---
 
-In many applications, especially when interacting with hardware or external systems, we often pass around primitive types like integers, strings, or floats. This can lead to problems:
+## 🧭 Philosophy: Beyond Primitive Types
 
--   **Primitive Obsession:** Is `temperature = 25` in Celsius or Fahrenheit? Is `spi_mode = 2` a valid mode? Raw values lack context and safety.
--   **Lost Domain Knowledge:** The rules governing these values are scattered throughout the codebase. An `Age` shouldn't be negative, and a `Temperature` from a sensor might have a specific valid range.
--   **Bugs and Unreliability:** Passing an invalid value can lead to subtle bugs or crashes far from where the value was created.
+In most codebases, we pass around raw values without context:
 
-The **Constrained Values** library solves this by embracing Object-Oriented principles. Instead of passing around a raw `int`, you create a rich, meaningful `Age` or `Temperature` object. This object encapsulates not just the value, but also the rules that govern it, ensuring that it can never exist in an invalid state.
+- Is `temperature = 25` Celsius or Fahrenheit?
+- Is `spi_mode = 2` valid for this device?
+- What does `-32768` mean again?
 
-This is particularly powerful for abstracting hardware domains. Instead of remembering that a [Modbus](https://www.modbus.org/) (Ventilation Comms) register value of `-32768` on a specific hardware means "no sensor detected," or that a valid Serial Peripheral Interface ([SPI](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface#Original_definition)) "mode" is an integer between 0 and 3, you can create type-safe objects like `VentilationTemperature` or `SPIMode` that handle this complexity internally.
+Primitive values lack **meaning**, **constraints**, and **domain intent**.  
+This is *Primitive Obsession* — a subtle but pervasive design smell.
 
-## Features
+**Constrained Values** replaces primitives with expressive, validated objects that *cannot exist in an invalid state*.
 
--   **Create Rich Value Objects:** Turn primitive data into meaningful, type-safe objects.
--   **Powerful Validation Pipelines:** Chain multiple validation and transformation steps.
--   **Built-in Strategies:** Includes common validators for ranges, enums, types, and more.
--   **Custom Logic:** Easily extend the library with your own validation and transformation strategies.
--   **Clear Error Handling:** Each constrained value clearly reports its status (`OK` or `EXCEPTION`) and provides descriptive error messages.
--   **Optional Error Throw:** When constructing a constrained value you can make it throw immediately, so you know an object is valid.    
--   **Type Safety:** Enforces the final, canonical type of your value.
+📖 [**Full Documentation →**](https://oodesigns.github.io/constrained-values/constrained_values.html#the-philosophy-beyond-primitive-types)
 
-## Installation
+---
+
+## ✨ Features
+
+- 🧩 **Rich Value Objects** – Replace primitives with expressive, validated domain objects.
+- 🔗 **Composable Pipelines** – Chain multiple validation and transformation strategies.
+- 🧠 **Built-in Validators** – Range checks, enums, type coercion, and more.
+- ⚙️ **Custom Logic** – Easily extend with your own domain-specific rules.
+- 🚦 **Clear Error Handling** – Track validation status and descriptive messages.
+- 🧯 **Optional Exception Mode** – Enforce invariants by raising on invalid input.
+- 🧾 **Type-Safety** – Each value enforces its canonical type at runtime.
+
+---
+
+## 🚀 Installation
 
 ```bash
 pip install constrained-values
-```
-
-Creating Docs... please wait...
-
-## Examples
-For examples, please see the [`examples/`](./examples) directory, which includes:
-- Chained transformations (`09_chained_transforms.py`)
-- Type coercion and validation (`10_type_validation_strategy.py`, `17_coerce_to_type.py`)
-- Enum validation (`13_enum_with_class.py`)
-- And many more.
-
