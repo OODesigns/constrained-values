@@ -1,6 +1,6 @@
 """
 .. include:: ../docs/introduction.md
-.. include:: ../docs/example.md
+.. include:: ../docs/examples.md
 """
 from .constants import DEFAULT_SUCCESS_MESSAGE
 from .status import Status
