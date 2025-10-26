@@ -17,7 +17,7 @@
 #   6. Deploys that artifact to your Pages site.
 # ======================================================================
 
-name: website
+name: Website
 
 on:
   push:
