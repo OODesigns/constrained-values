@@ -1,0 +1,162 @@
+# =====================================================================
+# 🧾 GitHub Actions Workflow: Build & Publish (PyPI / TestPyPI)
+# =====================================================================
+#
+# This workflow:
+#  - 🏗️ Builds the package (wheel + sdist) using Python 3.12
+#  - 🔎 Verifies metadata and enforces a universal wheel (py3-none-any)
+#  - 🚀 Publishes automatically to PyPI (stable) or TestPyPI (pre-releases)
+#  - 🔐 Uses OIDC Trusted Publishing — no API tokens needed
+#
+# Trigger rules:
+#  - Any tag starting with "v" will trigger a publish.
+#  - Tags containing "-rc", "-beta", or "-alpha" are treated as pre-releases
+#    and are published to TestPyPI.
+#  - All other tags are published to the main PyPI registry.
+#
+# Example tag → behavior:
+#   v0.2.0         → Publish to PyPI
+#   v0.2.0-rc.1    → Publish to TestPyPI
+#   v1.0.0-beta    → Publish to TestPyPI
+#
+# To run manually:
+#   Go to Actions → "Build & Publish (PyPI / TestPyPI)" → Run workflow
+#
+# To release:
+#   Update constrained_values/__init__.py → __version__ = "0.x.y"
+#   Commit and push changes
+#   Tag and push:
+#         git tag -a v0.x.y -m "Release v0.x.y"
+#         git push origin v0.x.y
+#
+# ---------------------------------------------------------------------
+# Requirements:
+# - Trusted Publisher registered on PyPI and/or TestPyPI:
+#     Repository: OODesigns/constrained-values
+#     Workflow file: publish.yml
+#     Environment name: (Any)
+# - No API tokens required.
+# ---------------------------------------------------------------------
+
+name: Build & Publish (PyPI / TestPyPI)
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+  # Automatic trigger on any tag beginning with "v"
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC Trusted Publishing
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # --------------------------------------------------------------
+      # Checkout the code
+      # --------------------------------------------------------------
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------------
+      # Set up Python 3.12
+      # --------------------------------------------------------------
+      # Using Python >=3.11 ensures correct wheel tags (py3-none-any)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # --------------------------------------------------------------
+      # Install build dependencies
+      # --------------------------------------------------------------
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build twine
+
+      # --------------------------------------------------------------
+      # Build source and wheel distributions
+      # --------------------------------------------------------------
+      - name: Build wheel and sdist
+        run: python -m build
+
+      # --------------------------------------------------------------
+      # Show generated artifacts for debugging
+      # --------------------------------------------------------------
+      - name: Show artifacts
+        run: |
+          python -V
+          ls -lh dist
+
+      # --------------------------------------------------------------
+      # Guard: ensure wheel is universal (py3-none-any)
+      # --------------------------------------------------------------
+      # Pure-Python packages should produce a universal wheel.
+      # If we get a version-specific tag (cp310 etc.), fail the job.
+      - name: Enforce universal py3 wheel
+        shell: bash
+        run: |
+          set -e
+          whl=$(ls dist/*.whl | head -n1)
+          echo "Wheel: $whl"
+          case "$whl" in
+            *-py3-none-any.whl) echo "✅ OK: universal py3 wheel";;
+            *) echo "❌ ERROR: expected a pure-Python universal wheel (py3-none-any), got: $whl"; exit 1;;
+          esac
+
+      # --------------------------------------------------------------
+      # Verify metadata with Twine
+      # --------------------------------------------------------------
+      - name: Verify metadata
+        run: twine check dist/*
+
+      # --------------------------------------------------------------
+      # Determine target repository (PyPI vs TestPyPI)
+      # --------------------------------------------------------------
+      # Pre-release tags (rc/beta/alpha) → TestPyPI
+      # Stable tags (v0.x.y) → PyPI
+      - name: Decide registry (TestPyPI for prereleases)
+        id: target
+        shell: bash
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          if [[ "$ref" =~ -(rc|beta|alpha) ]]; then
+            echo "index=testpypi" >> "$GITHUB_OUTPUT"
+            echo "Will publish pre-release '$ref' to TestPyPI."
+          else
+            echo "index=pypi" >> "$GITHUB_OUTPUT"
+            echo "Will publish stable release '$ref' to PyPI."
+          fi
+
+      # --------------------------------------------------------------
+      # Publish to TestPyPI (OIDC)
+      # --------------------------------------------------------------
+      - name: Publish to TestPyPI (OIDC)
+        if: steps.target.outputs.index == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+      # --------------------------------------------------------------
+      # Publish to PyPI (OIDC)
+      # --------------------------------------------------------------
+      - name: Publish to PyPI (OIDC)
+        if: steps.target.outputs.index == 'pypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+# =====================================================================
+# ✅ Summary:
+# - Builds using Python 3.12 to ensure correct wheel tagging
+# - Automatically decides between TestPyPI (for pre-releases) and PyPI
+# - Enforces a pure-Python universal wheel (py3-none-any)
+# - Uses OIDC (Trusted Publishing) for secure uploads
+# =====================================================================
