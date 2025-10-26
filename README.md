@@ -1,5 +1,5 @@
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white)](https://oodesigns.github.io/constrained-values/constrained_values.html)
-[![Build Status](https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg)](https://github.com/oodesigns/constrained-values/actions)
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?logo=readthedocs&logoColor=white)](https://OODesigns.github.io/constrained-values/constrained_values.html)
+[![Build Status](https://github.com/oodesigns/constrained-values/actions/workflows/website.yml/badge.svg)](https://github.com/OODesigns/constrained-values/actions)
 [![PyPI Version](https://img.shields.io/pypi/v/constrained-values.svg?logo=pypi&logoColor=white)](https://pypi.org/project/constrained-values/)
 ![Python Versions](https://img.shields.io/pypi/pyversions/constrained-values.svg)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
