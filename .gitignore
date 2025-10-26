@@ -242,3 +242,4 @@ cython_debug/
 #.idea/
 
 .idea/workspace.xml
+/docs/examples/
