@@ -1,4 +1,4 @@
-name: Publish-testpypi
+name: publish-testpypi
 
 on:
   workflow_dispatch:

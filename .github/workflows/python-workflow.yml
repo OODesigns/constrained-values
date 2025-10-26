@@ -1,7 +1,7 @@
 # Runs your package tests on multiple Python versions whenever you push to master
 # or open a PR targeting master. This is your "does the code still work?" guardrail.
 
-name: Python Package CI
+name: python Package CI
 
 on:
   push:
