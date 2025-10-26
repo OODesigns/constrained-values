@@ -50,39 +50,46 @@ pip install constrained-values
 ## 💡 Quick Example
 
 ```python
-from constrained_value_types import RangeValue, CoerceToType, RangeValidationStrategy
-from response import Status
+from constrained_values import RangeValue
 
 class Temperature(RangeValue):
     """Temperature constrained between 0 and 100°C."""
     def __init__(self, value):
         super().__init__(value, low_value=0, high_value=100)
 
-# ✅ Valid temperature
-t = Temperature(42)
-print("Value:", t.value)        # 42
-print("Status:", t.status.name) # OK
-print("Details:", t.details)    # success message
+def main() -> None:
+    # ✅ Valid temperature
+    t = Temperature(42)
+    print("Value:", t.value)        # 42
+    print("Status:", t.status.name) # OK
+    print("Details:", t.details)    # validation successful
 
-# 🚫 Invalid temperature
-t_invalid = Temperature(120)
-print("Value:", t_invalid.value)   # None
-print("Status:", t_invalid.status) # Status.EXCEPTION
-print("Details:", t_invalid.details)  # Something like "out of range: expected 0 <= x <= 100"
+    # 🚫 Invalid temperature
+    t_invalid = Temperature(120)
+    print("Value:", t_invalid.value)   # None
+    print("Status:", t_invalid.status) # Status.EXCEPTION
+    print("Details:", t_invalid.details)  # Value must be less than or equal to 100, got 120
+
+if __name__ == "__main__":
+    main()
 ```
 ## 🔥 Strict version
 If you want the behavior where invalid input throws immediately, use the StrictValue mixin:
 ```python
-from constrained_value_types import StrictValue, RangeValue
-
 class StrictTemperature(RangeValue, StrictValue):
     """Same range constraint but raises if invalid."""
     def __init__(self, value):
         RangeValue.__init__(self, value, low_value=0, high_value=100)
 
-# ✅ OK
-StrictTemperature(42)
+def main() -> None:
+    t = StrictTemperature(42)
+    print("Value:", t.value) # 42
 
-# 🚫 Raises ValueError
-StrictTemperature(120)
+    try:
+        StrictTemperature(120)
+    except ValueError as e:
+        print(e) # Failed Constraints for value - '120': Value must be less than or equal to 100, got 120
+
+if __name__ == "__main__":
+    main()
 ```
