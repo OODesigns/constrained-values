@@ -1,18 +1,60 @@
+# =====================================================================
+# pyproject.toml
+# This file defines how your package is built (PEP 517/518) and its
+# metadata (PEP 621).
+# =====================================================================
+
 [build-system]
+# These are the *build-time* requirements for the backend. 'setuptools'
+# builds your package; 'wheel' ensures a .whl is produced in dist/.
 requires = ["setuptools>=61", "wheel"]
+# The PEP 517 build backend. setuptools.build_meta implements the hooks
+# that 'python -m build' will call to create sdist + wheel.
 build-backend = "setuptools.build_meta"
 
 [project]
+# The name published on PyPI. Changing this creates a *new* project on PyPI.
 name = "constrained-values"
-# Version comes from constrained_values.__version__
-dynamic = ["version"]
+
+# You're telling setuptools to read the version dynamically from code,
+# so you won't put a literal version here. See [tool.setuptools.dynamic] below.
+dynamic = ["version"]  # version comes from constrained_values.__version__
+
+# One-line summary for PyPI and tools like 'pip show'.
 description = "A Python library for creating type-safe, self-validating value objects using a powerful transformation and validation pipeline."
+
+# A longer README shown on the project page (PyPI). Commonly README.md.
 readme = "README.md"
+
+# SPDX-friendly license metadata; the file is included in the sdist.
 license = { file = "LICENSE" }
+
+# Author info shown on PyPI.
 authors = [
     { name = "Michael Lindre", email = "cvl@oodesigns.com" }
 ]
-keywords = ["validation", "value-object", "constraints", "types", "enum", "range"]
+
+# Keywords help discovery on PyPI.
+keywords = [
+    "constraint-programming",
+    "constrained-enum",
+    "constrained-range",
+    "constrained-value",
+    "constraints",
+    "enum",
+    "range",
+    "types",
+    "validation",
+    "validation-library",
+    "value-object",
+    "validated-enum",
+    "validated-range",
+    "validated-value",
+    "validator"
+]
+
+# Classifiers control the badges on PyPI (supported versions, license, etc.).
+# Keep these in sync with your actual support and CI test matrix.
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -22,16 +64,55 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
+# This prevents installation on unsupported Python versions and informs
+# installers (and the wheel tag remains universal if the code is pure-Python).
 requires-python = ">=3.11"
 
-# Automatically find your src/ or package layout
+# If you have runtime dependencies, list them here as strings (PEP 508).
+# Example:
+# dependencies = [
+#   "pydantic>=2.6",
+#   "typing-extensions>=4.12; python_version < '3.12'"
+# ]
+
+# Optional tables document useful links that PyPI will render as buttons/links.
+[project.urls]
+# Keep 'Homepage' as your GitHub repo (or switch to docs root if you prefer).
+Homepage = "https://github.com/OODesigns/constrained-values"
+# Direct link to your generated pdoc page (you asked to surface this):
+Documentation = "https://oodesigns.github.io/constrained-values/constrained_values.html"
+# Nice-to-have links for PyPI UI:
+Repository = "https://github.com/OODesigns/constrained-values"
+Issues = "https://github.com/OODesigns/constrained-values/issues"
+# Changelog (optional, add if/when you have one)
+# Changelog = "https://github.com/OODesigns/constrained-values/releases"
+
+# =====================================================================
+# setuptools configuration
+# =====================================================================
+
+# Package discovery: you're using a "flat" layout (no 'src/' dir).
+# This will include any top-level packages that start with constrained_values
+# (e.g., 'constrained_values', 'constrained_values.extras', etc.).
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["constrained_values*"]
 
+# Dynamic fields resolved by setuptools at build time.
 [tool.setuptools.dynamic]
+# This imports constrained_values and reads __version__ from it.
+# Keep imports in __init__.py lightweight so the build doesn't break.
 version = { attr = "constrained_values.__version__" }
 
-[project.urls]
-Homepage = "https://github.com/OODesigns/constrained-values"
-Issues = "https://github.com/OODesigns/constrained-values/issues"
+# =====================================================================
+# Notes:
+# - Build with:      python -m pip install --upgrade build && python -m build
+# - Check metadata:  python -m pip install --upgrade twine && twine check dist/*
+# - Upload (PyPI):   twine upload dist/*
+# - Universal wheel: If your package is pure Python, the wheel should look like
+#                    constrained_values-<ver>-py3-none-any.whl and work on 3.11–3.13.
+# - If you ever ship data files with the package, consider:
+#     [tool.setuptools.package-data]
+#     constrained_values = ["py.typed", "data/*.json"]
+# =====================================================================
