@@ -1,10 +1,7 @@
 ## Examples Gallery
 
 Explore all **31 runnable examples** included with `constrained_values`.
-
-- Full example index: [examples.html](./examples.html)
 - Source code: [`examples/` on GitHub](https://github.com/OODesigns/constrained-values/tree/master/examples)
-
 ---
 
 ## 🧩 Core Value Semantics
